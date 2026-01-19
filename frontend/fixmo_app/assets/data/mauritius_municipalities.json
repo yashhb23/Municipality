@@ -1,0 +1,213 @@
+{
+  "municipalities": [
+    {
+      "id": "port-louis",
+      "name": "Port Louis",
+      "nameFr": "Port-Louis",
+      "nameKreol": "Polui",
+      "region": "Port Louis District",
+      "coordinates": {
+        "latitude": -20.1669,
+        "longitude": 57.5009
+      },
+      "keywords": [
+        "port louis", "polui", "city", "capital", "centre ville",
+        "caudan", "waterfront", "china town", "immigration square"
+      ],
+      "boundaries": {
+        "north": -20.1500,
+        "south": -20.1800,
+        "east": 57.5200,
+        "west": 57.4800
+      }
+    },
+    {
+      "id": "beau-bassin-rose-hill",
+      "name": "Beau Bassin-Rose Hill",
+      "nameFr": "Beau Bassin-Rose Hill",
+      "nameKreol": "Bel Basin-Roz Hill",
+      "region": "Plaines Wilhems District",
+      "coordinates": {
+        "latitude": -20.2500,
+        "longitude": 57.4700
+      },
+      "keywords": [
+        "beau bassin", "rose hill", "plaza", "trianon", "st jean",
+        "bel basin", "roz hill"
+      ],
+      "boundaries": {
+        "north": -20.2300,
+        "south": -20.2700,
+        "east": 57.4900,
+        "west": 57.4500
+      }
+    },
+    {
+      "id": "curepipe",
+      "name": "Curepipe",
+      "nameFr": "Curepipe",
+      "nameKreol": "Kiripep",
+      "region": "Plaines Wilhems District",
+      "coordinates": {
+        "latitude": -20.3167,
+        "longitude": 57.5167
+      },
+      "keywords": [
+        "curepipe", "kiripep", "botanical garden", "trou aux cerfs",
+        "royal college", "market"
+      ],
+      "boundaries": {
+        "north": -20.2900,
+        "south": -20.3400,
+        "east": 57.5400,
+        "west": 57.4900
+      }
+    },
+    {
+      "id": "quatre-bornes",
+      "name": "Quatre Bornes",
+      "nameFr": "Quatre Bornes",
+      "nameKreol": "Kat Born",
+      "region": "Plaines Wilhems District",
+      "coordinates": {
+        "latitude": -20.2658,
+        "longitude": 57.4789
+      },
+      "keywords": [
+        "quatre bornes", "kat born", "orchard centre", "sunset boulevard",
+        "cybercity", "ebene"
+      ],
+      "boundaries": {
+        "north": -20.2500,
+        "south": -20.2800,
+        "east": 57.4950,
+        "west": 57.4600
+      }
+    },
+    {
+      "id": "vacoas-phoenix",
+      "name": "Vacoas-Phoenix",
+      "nameFr": "Vacoas-Phoenix",
+      "nameKreol": "Vakwa-Feniks",
+      "region": "Plaines Wilhems District",
+      "coordinates": {
+        "latitude": -20.2986,
+        "longitude": 57.4947
+      },
+      "keywords": [
+        "vacoas", "phoenix", "vakwa", "feniks", "candos", "floreal"
+      ],
+      "boundaries": {
+        "north": -20.2700,
+        "south": -20.3200,
+        "east": 57.5200,
+        "west": 57.4700
+      }
+    },
+    {
+      "id": "mahebourg",
+      "name": "Mahébourg",
+      "nameFr": "Mahébourg",
+      "nameKreol": "Maebur",
+      "region": "Grand Port District",
+      "coordinates": {
+        "latitude": -20.4081,
+        "longitude": 57.7000
+      },
+      "keywords": [
+        "mahebourg", "maebur", "blue bay", "pointe desny",
+        "museum", "waterfront"
+      ],
+      "boundaries": {
+        "north": -20.3800,
+        "south": -20.4300,
+        "east": 57.7300,
+        "west": 57.6700
+      }
+    },
+    {
+      "id": "flacq",
+      "name": "Flacq",
+      "nameFr": "Flacq",
+      "nameKreol": "Flak",
+      "region": "Flacq District",
+      "coordinates": {
+        "latitude": -20.1847,
+        "longitude": 57.7183
+      },
+      "keywords": [
+        "flacq", "flak", "centre de flacq", "belle mare",
+        "palmar", "trou d'eau douce"
+      ],
+      "boundaries": {
+        "north": -20.1600,
+        "south": -20.2100,
+        "east": 57.7500,
+        "west": 57.6800
+      }
+    },
+    {
+      "id": "goodlands",
+      "name": "Goodlands",
+      "nameFr": "Goodlands",
+      "nameKreol": "Gudlan",
+      "region": "Rivière du Rempart District",
+      "coordinates": {
+        "latitude": -20.0403,
+        "longitude": 57.6031
+      },
+      "keywords": [
+        "goodlands", "gudlan", "arsenal", "poudre d'or",
+        "calodyne", "grand baie"
+      ],
+      "boundaries": {
+        "north": -20.0200,
+        "south": -20.0600,
+        "east": 57.6300,
+        "west": 57.5700
+      }
+    },
+    {
+      "id": "triolet",
+      "name": "Triolet",
+      "nameFr": "Triolet",
+      "nameKreol": "Triole",
+      "region": "Pamplemousses District",
+      "coordinates": {
+        "latitude": -20.0544,
+        "longitude": 57.5472
+      },
+      "keywords": [
+        "triolet", "triole", "mon choisy", "trou aux biches",
+        "grand baie", "pereybere"
+      ],
+      "boundaries": {
+        "north": -20.0300,
+        "south": -20.0800,
+        "east": 57.5700,
+        "west": 57.5200
+      }
+    },
+    {
+      "id": "black-river",
+      "name": "Black River",
+      "nameFr": "Rivière Noire",
+      "nameKreol": "Rivyer Nwar",
+      "region": "Black River District",
+      "coordinates": {
+        "latitude": -20.3619,
+        "longitude": 57.3711
+      },
+      "keywords": [
+        "black river", "riviere noire", "rivyer nwar", "flic en flac",
+        "tamarin", "grande riviere noire", "chamarel"
+      ],
+      "boundaries": {
+        "north": -20.3300,
+        "south": -20.4000,
+        "east": 57.4000,
+        "west": 57.3400
+      }
+    }
+  ]
+} 
