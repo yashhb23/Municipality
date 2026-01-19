@@ -1,0 +1,159 @@
+# 📱 FixMo – AI-Powered Civic Reporting App for Mauritius 🇲🇺
+
+> A beautiful, modern, and civic-impacting mobile app that allows citizens of Mauritius to report street-level problems (potholes, broken lights, garbage, etc.) to the right municipality — powered by AI, maps, and a clean user experience.
+
+---
+
+## 🧰 Full Tech Stack
+
+| Layer       | Technology                  | Description |
+|-------------|-----------------------------|-------------|
+| **Mobile App** | Flutter (Dart)            | Modern UI framework for Android & iOS from a single codebase |
+| **Backend API** | Node.js + Express        | Handles report processing, email sending, and logic |
+| **Database** | Supabase (PostgreSQL)       | Stores user accounts, reports, image metadata |
+| **Storage** | Supabase Storage             | Stores user-uploaded photos |
+| **Authentication** | Supabase Auth         | Email/password or OTP login support |
+| **AI** | OpenAI API                        | Used for auto-classifying photos and generating polite complaint messages |
+| **Maps SDK** | Google Maps SDK (Flutter)   | Shows map and user’s pin |
+| **Geo API** | Google Places / Geocoding API | Converts GPS coordinates to region name to find matching municipality |
+| **Email Service** | Nodemailer / Mailgun API | Sends formatted email reports to municipality addresses |
+| **Web Admin Dashboard** | Next.js (React)   | Admin portal for municipalities to manage incoming reports |
+
+---
+
+## 🎯 Key Features
+
+### ✅ Mobile App (Flutter)
+
+- **First Launch Setup**:
+  - Requests location access.
+  - Shows Google Map with GPS pinpoint.
+  - Uses Google Places API to reverse-geocode location.
+  - Suggests nearest municipality (from stored list).
+  - Dropdown in corner for manual municipality selection.
+  - User confirms and proceeds into app.
+
+- **Main Screen**:
++-----------------------------------+
+| 📍 Your Location: [Map Pin] |
+| Municipality: [Auto-detected] |
+| |
+| [ 📸 Report an Issue ] |
+| |
+| 🔍 View Past Reports |
++-----------------------------------+
+
+markdown
+Copy
+Edit
+
+- **Report Flow**:
+1. User takes or uploads a photo
+2. AI auto-detects issue type (e.g. trash, pothole)
+3. AI suggests complaint text (Creole/French/English)
+4. User confirms location + message
+5. Tap "Submit"
+
+- **Backend saves** the report and:
+- Sends an email to the relevant municipality
+- Stores in the Supabase DB
+- Shows in the admin dashboard
+
+---
+
+## 🗺️ How Location & Maps Work
+
+1. **Map Display**:  
+ Uses **Google Maps SDK for Flutter** to show current location on a live map.
+
+2. **Get GPS**:  
+ Uses Flutter plugin `geolocator` or `location` to fetch GPS coordinates.
+
+3. **Convert to Address**:  
+ Uses **Google Geocoding API** to turn lat/lon into readable address (e.g., Vacoas-Phoenix).
+
+4. **Match to Municipality**:  
+ You maintain a local list (stored in Supabase or app JSON) of all municipalities with their zones/keywords. Backend or frontend maps address to closest matching municipality.
+
+5. **User Confirms Municipality**:  
+ If detected municipality is incorrect, they can manually select from a list.
+
+---
+
+## 🖥️ Admin Web Dashboard
+
+Built in **Next.js (React)** for speed and simplicity.
+
+### Features:
+- Municipality staff log in securely
+- See all incoming reports for their region
+- View image, location pin, date, category, and message
+- Mark issues as "In Progress" or "Resolved"
+- Filter by status or issue type
+- Download data in CSV for internal use
+
+---
+
+## 📬 Email Report Example
+
+**To:** `portlouis@municipal.mu`  
+**Subject:** FixMo Report: Garbage in Tranquebar
+
+Hello,
+
+A new civic issue was reported by a resident in your region via the FixMo app.
+
+📍 Location: Tranquebar St, Port Louis
+📷 Photo: [Link to image]
+📂 Category: Garbage
+📝 Message: "Enn pil salte dan karrefour. Bizin nettoye vit."
+
+Please manage this via the FixMo admin dashboard:
+👉 https://fixmo.mu/admin/portlouis
+
+Thank you,
+FixMo Team
+
+yaml
+Copy
+Edit
+
+---
+
+## 🔐 App Permissions
+
+- GPS Location (foreground use)
+- Camera / Photos
+- Internet Access
+
+---
+
+## 🚧 Future Roadmap
+
+- ✅ Community voting on reports
+- ✅ Notification system
+- 🔄 Municipality feedback system
+- 🗣️ Full Creole/French/English UI translation
+- 🧾 User profile + history
+- 🛠️ Maintenance team login (for field workers)
+- 🗃️ Municipality onboarding form for official participation
+
+---
+
+## 🧪 Deployment Notes
+
+- Mobile app → Publish via Play Store & App Store
+- Web dashboard → Deployed on Vercel
+- Backend → Deployed on Railway / Render
+- Database + Storage → Supabase
+- API Keys (Maps, OpenAI, Mailgun) secured via Supabase/Node.js env
+
+---
+
+## 🤝 Open for Partnerships
+
+We aim to support municipalities in digitizing civic communication and maintenance workflows. NGOs and local governments can request onboarding.
+
+Contact: `fixmo@projectmu.org`
+
+---
