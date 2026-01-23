@@ -184,4 +184,4 @@ ON CONFLICT DO NOTHING;
 SELECT 'Database setup completed successfully!' as status;
 SELECT COUNT(*) as total_reports FROM public.reports;
 SELECT COUNT(*) as total_municipalities FROM public.municipalities;
-SELECT name, bucket_id FROM storage.buckets WHERE id = 'reportimages'; 
+SELECT id, name, public FROM storage.buckets WHERE id = 'reportimages'; 
