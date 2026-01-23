@@ -38,12 +38,12 @@ WITH CHECK (bucket_id = 'reportimages');
 -- Policy 3: Enable update for users based on user_id (UPDATE)
 CREATE POLICY "Enable update for users based on user_id" 
 ON storage.objects FOR UPDATE 
-USING (bucket_id = 'reportimages' AND auth.uid()::text = owner);
+USING (bucket_id = 'reportimages' AND auth.uid() = owner);
 
 -- Policy 4: Enable delete for users based on user_id (DELETE)
 CREATE POLICY "Enable delete for users based on user_id" 
 ON storage.objects FOR DELETE 
-USING (bucket_id = 'reportimages' AND auth.uid()::text = owner);
+USING (bucket_id = 'reportimages' AND auth.uid() = owner);
 
 -- Step 4: Ensure reports table exists with proper structure
 CREATE TABLE IF NOT EXISTS public.reports (
