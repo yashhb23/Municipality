@@ -57,9 +57,14 @@ CREATE TABLE IF NOT EXISTS public.reports (
     longitude DOUBLE PRECISION NOT NULL,
     address TEXT,
     image_url TEXT,
-    status VARCHAR(50) DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'resolved')),
+    status VARCHAR(50) DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'resolved', 'rejected')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    reporter_name VARCHAR(255) DEFAULT 'Anonymous',
+    reporter_email VARCHAR(255),
+    reporter_avatar TEXT,
+    is_current_user BOOLEAN DEFAULT false,
+    priority INTEGER DEFAULT 1
 );
 
 -- Step 5: Enable RLS and create policies for reports table

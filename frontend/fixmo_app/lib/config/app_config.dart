@@ -2,8 +2,8 @@
 /// Contains all API keys, URLs, and app constants
 class AppConfig {
   // Supabase Configuration
-  static const String supabaseUrl = 'https://iexhralidwrmfrggxtrh.supabase.co';
-  static const String supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlleHhyYWxpZHdybWZyZ2d4dHJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY4NTk5MTYsImV4cCI6MjA2MjQzNTkxNn0.ira3b5nui4LDhbKRsQ4iRgQKQm7hKXB-CmqFPVSdPaI';
+  static const String supabaseUrl = 'https://cxwayxmkacmywhttgwez.supabase.co';
+  static const String supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN4d2F5eG1rYWNteXdodHRnd2V6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0MjM4ODYsImV4cCI6MjA4MDk5OTg4Nn0.bUeVKqivjtmVP-P5XjWJe_kb5vLbbz95pRrA-UvJvKM';
   
   // Network Configuration
   static const Duration uploadTimeout = Duration(seconds: 30);

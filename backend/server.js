@@ -14,7 +14,7 @@ app.use(express.json());
 
 // Supabase configuration
 // Using URL from app_config.dart to ensure consistency with mobile app
-const supabaseUrl = process.env.SUPABASE_URL || 'https://iexhralidwrmfrggxtrh.supabase.co';
+const supabaseUrl = process.env.SUPABASE_URL || 'https://cxwayxmkacmywhttgwez.supabase.co';
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseServiceRoleKey) {
