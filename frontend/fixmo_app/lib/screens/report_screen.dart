@@ -37,7 +37,10 @@ class _ReportScreenState extends State<ReportScreen> {
   String _uploadStage = '';
   bool _showSuccessAnimation = false;
   final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+
 
   // Modern accent colors
   static const Color accentColor = Color(0xFF6C63FF); // Modern purple
@@ -230,6 +233,7 @@ class _ReportScreenState extends State<ReportScreen> {
   void dispose() {
     _descriptionController.dispose();
     _locationController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 
@@ -557,9 +561,10 @@ class _ReportScreenState extends State<ReportScreen> {
         municipality: municipality,
         imageUrls: imageUrl != null ? [imageUrl] : [],
         reporterName: 'Anonymous User', // TODO: Implement user system
+        reporterEmail: _emailController.text.isNotEmpty ? _emailController.text : null,
         isCurrentUser: true,
         priority: _getPriorityFromCategory(_selectedCategory ?? ''),
-        address: _locationController.text.isNotEmpty 
+        address: _locationController.text.isNotEmpty  
             ? _locationController.text 
             : '$municipality, Mauritius',
       );
@@ -1337,6 +1342,35 @@ class _ReportScreenState extends State<ReportScreen> {
               filled: true,
               fillColor: Colors.grey[50],
               prefixIcon: Icon(Icons.location_on, color: categoryColor),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade200),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade200),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: categoryColor, width: 2),
+              ),
+              hintStyle: TextStyle(color: Colors.grey[500]),
+            ),
+            ),
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Email field (Optional)
+          TextField(
+            controller: _emailController,
+            style: const TextStyle(fontSize: 16),
+            keyboardType: TextInputType.emailAddress,
+            decoration: InputDecoration(
+              hintText: 'Your email for updates (Optional)',
+              filled: true,
+              fillColor: Colors.grey[50],
+              prefixIcon: Icon(Icons.email, color: categoryColor),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(color: Colors.grey.shade200),
