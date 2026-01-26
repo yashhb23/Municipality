@@ -93,8 +93,6 @@ class ReportModel {
       'reporter_name': reporterName,
       'reporter_email': reporterEmail,
       'reporter_avatar': reporterAvatar,
-      'is_current_user': isCurrentUser,
-      'priority': priority,
       'address': address,
     };
   }

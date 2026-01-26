@@ -37,7 +37,6 @@ class _ReportScreenState extends State<ReportScreen> {
   String _uploadStage = '';
   bool _showSuccessAnimation = false;
   final TextEditingController _descriptionController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
 
@@ -1310,7 +1309,7 @@ class _ReportScreenState extends State<ReportScreen> {
           TextField(
             controller: _descriptionController,
             maxLines: 4,
-            style: const TextStyle(fontSize: 16),
+            style: const TextStyle(fontSize: 16, color: Colors.black87),
             decoration: InputDecoration(
               hintText: 'Describe the issue in more detail... (Optional)',
               filled: true,
@@ -1336,7 +1335,7 @@ class _ReportScreenState extends State<ReportScreen> {
           // Location field
           TextField(
             controller: _locationController,
-            style: const TextStyle(fontSize: 16),
+            style: const TextStyle(fontSize: 16, color: Colors.black87),
             decoration: InputDecoration(
               hintText: 'Specific location (Optional)',
               filled: true,
@@ -1356,7 +1355,6 @@ class _ReportScreenState extends State<ReportScreen> {
               ),
               hintStyle: TextStyle(color: Colors.grey[500]),
             ),
-            ),
           ),
           
           const SizedBox(height: 16),
@@ -1364,7 +1362,7 @@ class _ReportScreenState extends State<ReportScreen> {
           // Email field (Optional)
           TextField(
             controller: _emailController,
-            style: const TextStyle(fontSize: 16),
+            style: const TextStyle(fontSize: 16, color: Colors.black87),
             keyboardType: TextInputType.emailAddress,
             decoration: InputDecoration(
               hintText: 'Your email for updates (Optional)',

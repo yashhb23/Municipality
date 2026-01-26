@@ -44,7 +44,7 @@ dependencies:
   
   # Camera & Image
   image_picker: ^1.1.2
-  camera: ^0.11.0+2
+  camera: 0.10.5+9
   path_provider: ^2.1.4
   path: ^1.9.0
   image: ^4.1.7

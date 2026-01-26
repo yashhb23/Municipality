@@ -2,7 +2,9 @@
 
 -- 1. Add column if not exists
 ALTER TABLE public.reports 
-ADD COLUMN IF NOT EXISTS reporter_email VARCHAR(255);
+ADD COLUMN IF NOT EXISTS reporter_email VARCHAR(255),
+ADD COLUMN IF NOT EXISTS reporter_name VARCHAR(100) DEFAULT 'Anonymous',
+ADD COLUMN IF NOT EXISTS reporter_avatar VARCHAR(500);
 
 -- 2. Force refresh of schema cache (sometimes needed for Supabase UI)
 NOTIFY pgrst, 'reload schema';
