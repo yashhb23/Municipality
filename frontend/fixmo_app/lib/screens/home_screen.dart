@@ -133,9 +133,8 @@ class _HomeScreenState extends State<HomeScreen>
 
     // Add report markers with custom icons
     for (final report in _filteredReports) {
-      final reportIcon = await MapMarkerService.getReportMarker(
+      final reportIcon = await MapMarkerService.getThumbnailMarker(
         category: report.category,
-        status: report.status,
         isCurrentUser: report.isCurrentUser,
       );
 

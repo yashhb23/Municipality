@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:io';
+import 'package:uuid/uuid.dart';
 import 'dart:typed_data';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
@@ -505,7 +506,7 @@ class _ReportScreenState extends State<ReportScreen> {
           });
           
           // Generate temporary report ID for image upload
-          final tempReportId = DateTime.now().millisecondsSinceEpoch.toString();
+          final tempReportId = const Uuid().v4();
           
           if (kIsWeb && compressedImage is Uint8List) {
             // Web: Upload compressed bytes
@@ -536,7 +537,7 @@ class _ReportScreenState extends State<ReportScreen> {
       });
       
       final report = ReportModel(
-        id: DateTime.now().millisecondsSinceEpoch.toString(), // Temporary ID
+        id: const Uuid().v4(), // Generated UUID
         title: _selectedSpecificIssue ?? _selectedSubcategory ?? 'Issue Report',
         description: _descriptionController.text.isNotEmpty 
             ? _descriptionController.text 
