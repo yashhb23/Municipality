@@ -66,6 +66,8 @@ dependencies:
   flutter_spinkit: ^5.2.1
   flutter_staggered_animations: ^1.1.1
   cached_network_image: ^3.4.1
+  google_fonts: ^6.0.0
+  phosphor_flutter: ^2.0.0
 
 dev_dependencies:
   flutter_test:
@@ -124,3 +126,4 @@ flutter:
     - assets/images/
     - assets/icons/
     - assets/data/
+    - assets/map_styles/

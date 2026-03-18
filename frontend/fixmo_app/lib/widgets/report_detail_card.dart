@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/report_model.dart';
 
-/// Report detail card displayed when a map pin is tapped
+/// Report detail card displayed when a map pin is tapped. Dark theme.
 class ReportDetailCard extends StatelessWidget {
   final ReportModel report;
   final VoidCallback onClose;
@@ -12,16 +12,20 @@ class ReportDetailCard extends StatelessWidget {
     required this.onClose,
   });
 
+  static const Color _surface = Color(0xFF1A1A1A);
+  static const Color _primary = Color(0xFF00D9A3);
+
   @override
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _surface,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.15),
+            color: Colors.black.withOpacity(0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -41,11 +45,11 @@ class ReportDetailCard extends StatelessWidget {
                     topLeft: Radius.circular(16),
                     topRight: Radius.circular(16),
                   ),
-                  child: Container(
+                    child: Container(
                     height: 160,
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: Colors.grey[200],
+                      color: const Color(0xFF2A2A2A),
                     ),
                     child: Image.network(
                       report.imageUrls.first,
@@ -53,19 +57,19 @@ class ReportDetailCard extends StatelessWidget {
                       loadingBuilder: (context, child, loadingProgress) {
                         if (loadingProgress == null) return child;
                         return Container(
-                          color: Colors.grey[200],
+                          color: const Color(0xFF2A2A2A),
                           child: const Center(
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            child: CircularProgressIndicator(strokeWidth: 2, color: _primary),
                           ),
                         );
                       },
                       errorBuilder: (context, error, stackTrace) {
                         return Container(
-                          color: Colors.grey[200],
-                          child: const Center(
+                          color: const Color(0xFF2A2A2A),
+                          child: Center(
                             child: Icon(
                               Icons.image_not_supported,
-                              color: Colors.grey,
+                              color: Colors.grey.shade500,
                               size: 32,
                             ),
                           ),
@@ -111,7 +115,7 @@ class ReportDetailCard extends StatelessWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.green,
+                      color: _primary,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -152,6 +156,7 @@ class ReportDetailCard extends StatelessWidget {
                         report.title,
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -189,13 +194,13 @@ class ReportDetailCard extends StatelessWidget {
                     Icon(
                       report.categoryIcon,
                       size: 16,
-                      color: Theme.of(context).primaryColor,
+                      color: _primary,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       report.category,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).primaryColor,
+                        color: _primary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -206,8 +211,8 @@ class ReportDetailCard extends StatelessWidget {
                         Icons.priority_high,
                         size: 12,
                         color: index < report.priority
-                            ? Colors.red
-                            : Colors.grey[300],
+                            ? Colors.red.shade400
+                            : Colors.grey.shade600,
                       ),
                     ),
                   ],
@@ -218,7 +223,9 @@ class ReportDetailCard extends StatelessWidget {
                 // Description
                 Text(
                   report.description,
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey.shade300,
+                  ),
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -232,17 +239,15 @@ class ReportDetailCard extends StatelessWidget {
                       width: 32,
                       height: 32,
                       decoration: BoxDecoration(
-                        color: report.isCurrentUser 
-                            ? Colors.green.withOpacity(0.1)
-                            : Theme.of(context).primaryColor.withOpacity(0.1),
+                        color: report.isCurrentUser
+                            ? _primary.withOpacity(0.2)
+                            : _primary.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Icon(
                         Icons.person,
                         size: 16,
-                        color: report.isCurrentUser 
-                            ? Colors.green
-                            : Theme.of(context).primaryColor,
+                        color: _primary,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -254,12 +259,13 @@ class ReportDetailCard extends StatelessWidget {
                             report.reporterName,
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               fontWeight: FontWeight.w500,
+                              color: Colors.white,
                             ),
                           ),
                           Text(
                             report.timeAgo,
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.grey[600],
+                              color: Colors.grey.shade400,
                             ),
                           ),
                         ],
@@ -271,7 +277,7 @@ class ReportDetailCard extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.grey[100],
+                        color: const Color(0xFF2A2A2A),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
@@ -280,13 +286,13 @@ class ReportDetailCard extends StatelessWidget {
                           Icon(
                             Icons.location_on,
                             size: 12,
-                            color: Colors.grey[600],
+                            color: Colors.grey.shade400,
                           ),
                           const SizedBox(width: 4),
                           Text(
                             report.municipality,
                             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: Colors.grey[600],
+                              color: Colors.grey.shade400,
                             ),
                           ),
                         ],
@@ -302,25 +308,23 @@ class ReportDetailCard extends StatelessWidget {
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.grey[50],
+                    color: const Color(0xFF2A2A2A),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: Colors.grey[200]!,
-                    ),
+                    border: Border.all(color: Colors.white.withOpacity(0.06)),
                   ),
                   child: Row(
                     children: [
                       Icon(
                         Icons.place,
                         size: 16,
-                        color: Colors.grey[600],
+                        color: Colors.grey.shade400,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           report.address,
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.grey[700],
+                            color: Colors.grey.shade300,
                           ),
                         ),
                       ),

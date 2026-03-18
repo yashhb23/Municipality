@@ -5,47 +5,37 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../models/report_model.dart';
 import '../config/app_config.dart';
+import '../utils/app_logger.dart';
 
 /// Service for handling Supabase database and storage operations
 class SupabaseService {
   final SupabaseClient _client = Supabase.instance.client;
   final Uuid _uuid = const Uuid();
 
-  /// Get Supabase client instance
   SupabaseClient get client => _client;
 
   /// Check if device has internet connection and Supabase is reachable
-  /// Note: This is a lightweight check. The actual upload relies on retry logic.
   Future<bool> hasInternetConnection() async {
     try {
-      // Simple ping to Supabase - just check if we can reach it
-      // Don't fail on RLS policies, just verify network connectivity
       await _client
           .from('municipalities')
           .select('id')
           .limit(1)
           .timeout(const Duration(seconds: 3));
-      print('✅ Supabase connection verified');
+      AppLogger.debug('Supabase connection verified');
       return true;
     } catch (e) {
-      // Categorize error type for better diagnostics
       final errorMessage = e.toString().toLowerCase();
-      
-      if (errorMessage.contains('socketexception') || 
+      if (errorMessage.contains('socketexception') ||
           errorMessage.contains('failed host lookup')) {
-        print('❌ DNS Error: Cannot resolve Supabase host. Check your Supabase URL.');
-        print('   URL: ${AppConfig.supabaseUrl}');
-        print('   This may indicate an incorrect project URL or DNS issue.');
+        AppLogger.warn('DNS error: cannot resolve Supabase host');
       } else if (errorMessage.contains('timeout')) {
-        print('⚠️ Timeout: Supabase not responding within 3 seconds');
+        AppLogger.warn('Supabase not responding within 3s');
       } else if (errorMessage.contains('auth') || errorMessage.contains('jwt')) {
-        print('⚠️ Auth Error: API key may be incorrect');
+        AppLogger.warn('Auth error: API key may be incorrect');
       } else {
-        print('⚠️ Connection check warning: $e');
+        AppLogger.warn('Connection check warning: $e');
       }
-      
-      // Return true to allow the upload to proceed with retry logic
-      // The actual upload will provide better error feedback
       return true;
     }
   }
@@ -61,20 +51,17 @@ class SupabaseService {
     while (attempt < maxAttempts) {
       try {
         attempt++;
-        print('🔄 Attempt $attempt of $maxAttempts...');
+        AppLogger.debug('Attempt $attempt of $maxAttempts...');
         return await operation();
       } catch (e) {
-        print('❌ Attempt $attempt failed: $e');
-        
+        AppLogger.error('Attempt $attempt failed', e);
         if (attempt >= maxAttempts) {
-          print('❌ All retry attempts exhausted');
+          AppLogger.error('All retry attempts exhausted');
           rethrow;
         }
-
-        // Exponential backoff
-        print('⏳ Waiting ${delay.inSeconds}s before retry...');
+        AppLogger.debug('Waiting ${delay.inSeconds}s before retry...');
         await Future.delayed(delay);
-        delay *= 2; // Double the delay for next attempt
+        delay *= 2;
       }
     }
 
@@ -84,13 +71,10 @@ class SupabaseService {
   /// Test connection to Supabase
   Future<bool> testConnection() async {
     try {
-      final response = await _client
-          .from('municipalities')
-          .select('count')
-          .limit(1);
+      await _client.from('municipalities').select('count').limit(1);
       return true;
     } catch (e) {
-      print('❌ Supabase connection failed: $e');
+      AppLogger.error('Supabase connection failed', e);
       return false;
     }
   }
@@ -98,295 +82,210 @@ class SupabaseService {
   /// Create a new report in the database with retry logic
   Future<String> createReport(ReportModel report) async {
     return await _executeWithRetry(() async {
-      print('🔄 Creating report in Supabase...');
-      
+      AppLogger.debug('Creating report in Supabase...');
       final response = await _client
           .from('reports')
           .insert(report.toJson())
           .select('id')
           .single()
           .timeout(AppConfig.queryTimeout);
-      
       final reportId = response['id'] as String;
-      print('✅ Report created successfully with ID: $reportId');
+      AppLogger.debug('Report created with ID: $reportId');
       return reportId;
     });
   }
 
-  /// Upload image to Supabase storage (using 'reportimages' bucket)
-  /// Supports both File (mobile) and Uint8List (web) uploads
+  /// Upload image to Supabase storage (using 'reportimages' bucket).
+  /// Supports both File (mobile) and Uint8List (web) uploads.
   Future<String> uploadImage(dynamic imageSource, String reportId) async {
     return await _executeWithRetry(() async {
-      print('🔄 Uploading image to Supabase storage...');
-      print('   Storage URL: ${AppConfig.supabaseUrl}/storage/v1');
-      
+      AppLogger.debug('Uploading image to Supabase storage...');
       final fileName = '${reportId}_${_uuid.v4()}.jpg';
       final filePath = 'reports/$fileName';
-      
+
       try {
-        // Handle different image source types
         if (imageSource is File) {
-          // Mobile: Upload from File
           if (!await imageSource.exists()) {
-            throw Exception('Image file does not exist at path: ${imageSource.path}');
+            throw Exception('Image file does not exist');
           }
-          
           final fileSize = await imageSource.length();
-          print('   Image size: ${(fileSize / 1024).toStringAsFixed(2)} KB');
-          
+          AppLogger.debug('Image size: ${(fileSize / 1024).toStringAsFixed(0)} KB');
           await _client.storage
               .from('reportimages')
-              .upload(
-                filePath, 
-                imageSource,
-                fileOptions: const FileOptions(
-                  cacheControl: '3600',
-                  upsert: false,
-                  contentType: 'image/jpeg',
-                ),
-              )
+              .upload(filePath, imageSource,
+                  fileOptions: const FileOptions(
+                    cacheControl: '3600',
+                    upsert: false,
+                    contentType: 'image/jpeg',
+                  ))
               .timeout(AppConfig.uploadTimeout);
-              
         } else if (imageSource is Uint8List) {
-          // Web: Upload from bytes
-          print('   Image size: ${(imageSource.length / 1024).toStringAsFixed(2)} KB');
-          
+          AppLogger.debug('Image size: ${(imageSource.length / 1024).toStringAsFixed(0)} KB');
           await _client.storage
               .from('reportimages')
-              .uploadBinary(
-                filePath, 
-                imageSource,
-                fileOptions: const FileOptions(
-                  cacheControl: '3600',
-                  upsert: false,
-                  contentType: 'image/jpeg',
-                ),
-              )
+              .uploadBinary(filePath, imageSource,
+                  fileOptions: const FileOptions(
+                    cacheControl: '3600',
+                    upsert: false,
+                    contentType: 'image/jpeg',
+                  ))
               .timeout(AppConfig.uploadTimeout);
-              
         } else {
           throw Exception('Unsupported image source type: ${imageSource.runtimeType}');
         }
-        
-        // Get public URL
-        final publicUrl = _client.storage
-            .from('reportimages')
-            .getPublicUrl(filePath);
-        
-        print('✅ Image uploaded successfully');
-        print('   Public URL: $publicUrl');
+
+        final publicUrl = _client.storage.from('reportimages').getPublicUrl(filePath);
+        AppLogger.debug('Image uploaded successfully');
         return publicUrl;
-        
       } catch (e) {
-        // Enhanced error diagnostics
         final errorStr = e.toString().toLowerCase();
-        
         if (errorStr.contains('socketexception') || errorStr.contains('failed host lookup')) {
-          print('❌ DNS ERROR: Cannot reach Supabase server');
-          print('   Check your Supabase project URL: ${AppConfig.supabaseUrl}');
+          AppLogger.error('DNS error: cannot reach Supabase server');
           throw Exception('Cannot reach upload server. Please check your internet connection and try again.');
         } else if (errorStr.contains('bucket') || errorStr.contains('not found')) {
-          print('❌ BUCKET ERROR: Storage bucket "reportimages" not found');
-          print('   Please create the bucket in your Supabase dashboard');
+          AppLogger.error('Storage bucket "reportimages" not found');
           throw Exception('Upload configuration error. Please contact support.');
         } else if (errorStr.contains('policy') || errorStr.contains('permission')) {
-          print('❌ PERMISSION ERROR: No permission to upload to bucket');
-          print('   Check RLS policies for the "reportimages" bucket');
+          AppLogger.error('No permission to upload to bucket');
           throw Exception('Upload permission denied. Please contact support.');
         } else if (errorStr.contains('timeout')) {
-          print('❌ TIMEOUT: Upload took longer than ${AppConfig.uploadTimeout.inSeconds}s');
+          AppLogger.error('Upload timed out');
           throw Exception('Upload timed out. Please try again with a smaller image.');
         }
-        
-        print('❌ Unexpected upload error: $e');
+        AppLogger.error('Unexpected upload error', e);
         rethrow;
       }
     });
   }
 
-  /// Get all reports for a specific municipality
   Future<List<ReportModel>> getReportsByMunicipality(String municipality) async {
     try {
-      print('🔄 Fetching reports for municipality: $municipality');
-      
+      AppLogger.debug('Fetching reports for municipality: $municipality');
       final response = await _client
           .from('reports')
           .select()
           .eq('municipality', municipality)
           .order('created_at', ascending: false);
-      
-      final reports = response
-          .map<ReportModel>((data) => ReportModel.fromJson(data))
-          .toList();
-      
-      print('✅ Fetched ${reports.length} reports for $municipality');
+      final reports = response.map<ReportModel>((data) => ReportModel.fromJson(data)).toList();
+      AppLogger.debug('Fetched ${reports.length} reports for $municipality');
       return reports;
     } catch (e) {
-      print('❌ Failed to fetch reports: $e');
-      return []; // Return empty list instead of throwing
+      AppLogger.error('Failed to fetch reports', e);
+      return [];
     }
   }
 
-  /// Get reports by status
   Future<List<ReportModel>> getReportsByStatus(String status) async {
     try {
-      print('🔄 Fetching reports with status: $status');
-      
+      AppLogger.debug('Fetching reports with status: $status');
       final response = await _client
           .from('reports')
           .select()
           .eq('status', status)
           .order('created_at', ascending: false);
-      
-      final reports = response
-          .map<ReportModel>((data) => ReportModel.fromJson(data))
-          .toList();
-      
-      print('✅ Fetched ${reports.length} reports with status $status');
+      final reports = response.map<ReportModel>((data) => ReportModel.fromJson(data)).toList();
+      AppLogger.debug('Fetched ${reports.length} reports with status $status');
       return reports;
     } catch (e) {
-      print('❌ Failed to fetch reports by status: $e');
-      return []; // Return empty list instead of throwing
+      AppLogger.error('Failed to fetch reports by status', e);
+      return [];
     }
   }
 
-  /// Get all reports (for testing and admin purposes)
   Future<List<ReportModel>> getAllReports() async {
     try {
-      print('🔄 Fetching all reports...');
-      
+      AppLogger.debug('Fetching all reports...');
       final response = await _client
           .from('reports')
           .select()
           .order('created_at', ascending: false)
-          .limit(100); // Limit to prevent excessive data
-      
-      final reports = response
-          .map<ReportModel>((data) => ReportModel.fromJson(data))
-          .toList();
-      
-      print('✅ Fetched ${reports.length} total reports');
+          .limit(100);
+      final reports = response.map<ReportModel>((data) => ReportModel.fromJson(data)).toList();
+      AppLogger.debug('Fetched ${reports.length} total reports');
       return reports;
     } catch (e) {
-      print('❌ Failed to fetch all reports: $e');
-      return []; // Return empty list instead of throwing
+      AppLogger.error('Failed to fetch all reports', e);
+      return [];
     }
   }
 
-  /// Update report status
   Future<void> updateReportStatus(String reportId, String status) async {
     try {
-      print('🔄 Updating report $reportId status to: $status');
-      
+      AppLogger.debug('Updating report status...');
       await _client
           .from('reports')
-          .update({
-            'status': status, 
-            'updated_at': DateTime.now().toIso8601String()
-          })
+          .update({'status': status, 'updated_at': DateTime.now().toIso8601String()})
           .eq('id', reportId);
-      
-      print('✅ Report status updated successfully');
+      AppLogger.debug('Report status updated');
     } catch (e) {
-      print('❌ Failed to update report status: $e');
+      AppLogger.error('Failed to update report status', e);
       throw Exception('Failed to update report status: $e');
     }
   }
 
-  /// Get user's reports
   Future<List<ReportModel>> getUserReports(String userId) async {
     try {
-      print('🔄 Fetching reports for user: $userId');
-      
+      AppLogger.debug('Fetching user reports...');
       final response = await _client
           .from('reports')
           .select()
           .eq('user_id', userId)
           .order('created_at', ascending: false);
-      
-      final reports = response
-          .map<ReportModel>((data) => ReportModel.fromJson(data))
-          .toList();
-      
-      print('✅ Fetched ${reports.length} reports for user');
+      final reports = response.map<ReportModel>((data) => ReportModel.fromJson(data)).toList();
+      AppLogger.debug('Fetched ${reports.length} user reports');
       return reports;
     } catch (e) {
-      print('❌ Failed to fetch user reports: $e');
-      return []; // Return empty list instead of throwing
+      AppLogger.error('Failed to fetch user reports', e);
+      return [];
     }
   }
 
-  /// Delete a report
   Future<void> deleteReport(String reportId) async {
     try {
-      print('🔄 Deleting report: $reportId');
-      
-      await _client
-          .from('reports')
-          .delete()
-          .eq('id', reportId);
-      
-      print('✅ Report deleted successfully');
+      AppLogger.debug('Deleting report...');
+      await _client.from('reports').delete().eq('id', reportId);
+      AppLogger.debug('Report deleted');
     } catch (e) {
-      print('❌ Failed to delete report: $e');
+      AppLogger.error('Failed to delete report', e);
       throw Exception('Failed to delete report: $e');
     }
   }
 
-  /// Get report statistics for dashboard
   Future<Map<String, int>> getReportStatistics(String municipality) async {
     try {
-      print('🔄 Fetching statistics for: $municipality');
-      
+      AppLogger.debug('Fetching statistics...');
       final response = await _client
           .from('reports')
           .select('status')
           .eq('municipality', municipality);
-      
-      Map<String, int> stats = {
-        'total': response.length,
-        'pending': 0,
-        'in_progress': 0,
-        'resolved': 0,
-      };
-      
+      Map<String, int> stats = {'total': response.length, 'pending': 0, 'in_progress': 0, 'resolved': 0};
       for (var report in response) {
         final status = report['status'] as String;
         stats[status] = (stats[status] ?? 0) + 1;
       }
-      
-      print('✅ Statistics: ${stats.toString()}');
+      AppLogger.debug('Statistics fetched');
       return stats;
     } catch (e) {
-      print('❌ Failed to fetch statistics: $e');
-      return {
-        'total': 0,
-        'pending': 0,
-        'in_progress': 0,
-        'resolved': 0,
-      };
+      AppLogger.error('Failed to fetch statistics', e);
+      return {'total': 0, 'pending': 0, 'in_progress': 0, 'resolved': 0};
     }
   }
 
-  /// Get all municipalities from database
   Future<List<Map<String, dynamic>>> getMunicipalities() async {
     try {
-      print('🔄 Fetching municipalities from database...');
-      
+      AppLogger.debug('Fetching municipalities...');
       final response = await _client
           .from('municipalities')
           .select('*')
           .order('name', ascending: true);
-      
-      print('✅ Fetched ${response.length} municipalities');
+      AppLogger.debug('Fetched ${response.length} municipalities');
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      print('❌ Failed to fetch municipalities: $e');
-      return []; // Return empty list instead of throwing
+      AppLogger.error('Failed to fetch municipalities', e);
+      return [];
     }
   }
 
-  /// Test database and storage setup
   Future<Map<String, bool>> testSetup() async {
     Map<String, bool> results = {
       'database_connection': false,
@@ -394,45 +293,27 @@ class SupabaseService {
       'municipalities_table': false,
       'storage_bucket': false,
     };
-
     try {
-      // Test database connection
       await _client.from('municipalities').select('count').limit(1);
       results['database_connection'] = true;
-      
-      // Test reports table
       await _client.from('reports').select('count').limit(1);
       results['reports_table'] = true;
-      
-      // Test municipalities table  
       await _client.from('municipalities').select('count').limit(1);
       results['municipalities_table'] = true;
-      
-      // Test storage bucket
       final buckets = await _client.storage.listBuckets();
       results['storage_bucket'] = buckets.any((bucket) => bucket.id == 'reportimages');
-      
     } catch (e) {
-      print('❌ Setup test failed: $e');
+      AppLogger.error('Setup test failed', e);
     }
-
     return results;
   }
 
-  /// Initialize sample data for testing
   Future<void> initializeSampleData() async {
     try {
-      print('🔄 Checking for sample data...');
-      
-      // Check if we already have reports
-      final existingReports = await _client
-          .from('reports')
-          .select('count')
-          .limit(1);
-      
+      AppLogger.debug('Checking for sample data...');
+      final existingReports = await _client.from('reports').select('count').limit(1);
       if (existingReports.isEmpty) {
-        print('🔄 Creating sample reports...');
-        
+        AppLogger.debug('Creating sample reports...');
         final sampleReports = [
           {
             'title': 'Sample Pothole Report',
@@ -455,15 +336,13 @@ class SupabaseService {
             'status': 'in_progress'
           }
         ];
-
         await _client.from('reports').insert(sampleReports);
-        print('✅ Sample data created successfully');
+        AppLogger.debug('Sample data created');
       } else {
-        print('✅ Sample data already exists');
+        AppLogger.debug('Sample data already exists');
       }
     } catch (e) {
-      print('❌ Failed to initialize sample data: $e');
-      // Continue anyway - this is not critical
+      AppLogger.error('Failed to initialize sample data', e);
     }
   }
-} 
+}

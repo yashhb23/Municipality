@@ -1,50 +1,48 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/app_config.dart';
 
-/// Theme provider for managing app themes with smooth transitions
+/// Theme provider: light/dark only, ThemeMode.system with manual toggle.
+/// Uses Poppins font and AppConfig colors (#00D9A3 primary, dark #0A0A0A/#1A1A1A).
 class ThemeProvider extends ChangeNotifier {
   static const String _themeKey = 'selected_theme';
-  
-  AppTheme _currentTheme = AppTheme.light;
-  bool _isDarkMode = false;
-  
+
+  AppTheme _currentTheme = AppTheme.dark;
+  bool _isDarkMode = true;
+
   AppTheme get currentTheme => _currentTheme;
   bool get isDarkMode => _isDarkMode;
-  
   ThemeData get themeData => _getThemeData(_currentTheme);
-  
-  /// Initialize theme from saved preferences
+
   Future<void> initializeTheme() async {
     try {
       final prefs = await SharedPreferences.getInstance()
           .timeout(const Duration(seconds: 2));
-    final savedTheme = prefs.getString(_themeKey);
-    if (savedTheme != null) {
-      _currentTheme = AppTheme.values.firstWhere(
-        (theme) => theme.name == savedTheme,
-        orElse: () => AppTheme.light,
-      );
-        _isDarkMode = (_currentTheme == AppTheme.dark);
-      notifyListeners();
+      final savedTheme = prefs.getString(_themeKey);
+      if (savedTheme != null) {
+        for (final t in AppTheme.values) {
+          if (t.name == savedTheme) {
+            _currentTheme = t;
+            _isDarkMode = (t == AppTheme.dark);
+            notifyListeners();
+            break;
+          }
+        }
       }
     } catch (e) {
-      print('⚠️ Theme initialization failed, using default: $e');
-      // Continue with default light theme
+      debugPrint('Theme initialization failed: $e');
     }
   }
-  
-  /// Change theme and save to preferences
+
   Future<void> setTheme(AppTheme theme) async {
     _currentTheme = theme;
     _isDarkMode = (theme == AppTheme.dark);
     notifyListeners();
-    
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_themeKey, theme.name);
   }
-  
-  /// Toggle between light and dark mode
+
   Future<void> toggleTheme() async {
     if (_isDarkMode) {
       await setTheme(AppTheme.light);
@@ -52,306 +50,220 @@ class ThemeProvider extends ChangeNotifier {
       await setTheme(AppTheme.dark);
     }
   }
-  
-  /// Get theme data for specific theme
+
   ThemeData _getThemeData(AppTheme theme) {
     switch (theme) {
       case AppTheme.light:
         return _lightTheme();
       case AppTheme.dark:
         return _darkTheme();
-      case AppTheme.ocean:
-        return _oceanTheme();
-      case AppTheme.forest:
-        return _forestTheme();
-      case AppTheme.sunset:
-        return _sunsetTheme();
-      case AppTheme.purple:
-        return _purpleTheme();
     }
   }
-  
+
+  static TextTheme _poppinsTextTheme(Color primary, Color onSurface, Color secondary) {
+    return TextTheme(
+      displayLarge: GoogleFonts.poppins(
+        fontSize: 32,
+        fontWeight: FontWeight.w700,
+        color: onSurface,
+        height: 1.2,
+      ),
+      displayMedium: GoogleFonts.poppins(
+        fontSize: 28,
+        fontWeight: FontWeight.w700,
+        color: onSurface,
+        height: 1.2,
+      ),
+      displaySmall: GoogleFonts.poppins(
+        fontSize: 24,
+        fontWeight: FontWeight.w700,
+        color: onSurface,
+        height: 1.3,
+      ),
+      headlineLarge: GoogleFonts.poppins(
+        fontSize: 22,
+        fontWeight: FontWeight.w600,
+        color: onSurface,
+        height: 1.3,
+      ),
+      headlineMedium: GoogleFonts.poppins(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: onSurface,
+        height: 1.3,
+      ),
+      headlineSmall: GoogleFonts.poppins(
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        color: onSurface,
+        height: 1.4,
+      ),
+      titleLarge: GoogleFonts.poppins(
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        color: onSurface,
+        height: 1.4,
+      ),
+      titleMedium: GoogleFonts.poppins(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: onSurface,
+        height: 1.4,
+      ),
+      titleSmall: GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: onSurface,
+        height: 1.4,
+      ),
+      bodyLarge: GoogleFonts.poppins(
+        fontSize: 16,
+        fontWeight: FontWeight.w400,
+        color: onSurface,
+        height: 1.5,
+      ),
+      bodyMedium: GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        color: onSurface,
+        height: 1.5,
+      ),
+      bodySmall: GoogleFonts.poppins(
+        fontSize: 12,
+        fontWeight: FontWeight.w400,
+        color: secondary,
+        height: 1.5,
+      ),
+      labelLarge: GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: onSurface,
+        height: 1.4,
+      ),
+      labelMedium: GoogleFonts.poppins(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        color: secondary,
+        height: 1.4,
+      ),
+      labelSmall: GoogleFonts.poppins(
+        fontSize: 10,
+        fontWeight: FontWeight.w500,
+        color: secondary,
+        height: 1.4,
+      ),
+    );
+  }
+
   ThemeData _lightTheme() {
+    const primary = Color(AppConfig.primaryLightValue);
+    const surface = Color(AppConfig.lightSurfaceValue);
+    const background = Color(AppConfig.lightBackgroundValue);
+    const onPrimary = Colors.white;
+    const onSurface = Color(AppConfig.lightTextPrimaryValue);
+    const onSurfaceSecondary = Color(AppConfig.lightTextSecondaryValue);
+
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      primarySwatch: _createMaterialColor(const Color(AppConfig.primaryColorValue)),
-      primaryColor: const Color(AppConfig.primaryColorValue),
-      scaffoldBackgroundColor: const Color(AppConfig.lightBackgroundValue),
+      primaryColor: primary,
+      scaffoldBackgroundColor: background,
       colorScheme: const ColorScheme.light(
-        primary: Color(AppConfig.primaryColorValue),
-        secondary: Color(AppConfig.secondaryColorValue),
+        primary: primary,
+        onPrimary: onPrimary,
+        surface: surface,
+        onSurface: onSurface,
         error: Color(AppConfig.errorColorValue),
-        surface: Color(AppConfig.lightSurfaceValue),
-        onPrimary: Colors.white,
-        onSecondary: Colors.white,
-        onSurface: Color(AppConfig.lightTextPrimaryValue),
         onError: Colors.white,
       ),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.white,
-        foregroundColor: Color(AppConfig.lightTextPrimaryValue),
+      textTheme: _poppinsTextTheme(primary, onSurface, onSurfaceSecondary),
+      appBarTheme: AppBarTheme(
+        backgroundColor: surface,
+        foregroundColor: onSurface,
         elevation: 0,
-        iconTheme: IconThemeData(color: Color(AppConfig.primaryColorValue)),
+        iconTheme: const IconThemeData(color: primary),
+        titleTextStyle: GoogleFonts.poppins(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: onSurface,
+        ),
       ),
       cardTheme: CardThemeData(
-        color: const Color(AppConfig.lightCardValue),
+        color: surface,
         elevation: 2,
-        shadowColor: const Color(AppConfig.primaryColorValue).withOpacity(0.1),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(AppConfig.primaryColorValue),
-          foregroundColor: Colors.white,
+          backgroundColor: primary,
+          foregroundColor: onPrimary,
           elevation: 2,
-          shadowColor: const Color(AppConfig.primaryColorValue).withOpacity(0.3),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
         ),
       ),
-      textTheme: const TextTheme(
-        displayLarge: TextStyle(color: Color(AppConfig.lightTextPrimaryValue), fontWeight: FontWeight.w700, fontSize: 32, letterSpacing: 0.5, height: 1.5),
-        displayMedium: TextStyle(color: Color(AppConfig.lightTextPrimaryValue), fontWeight: FontWeight.w700, fontSize: 28, letterSpacing: 0.5, height: 1.5),
-        displaySmall: TextStyle(color: Color(AppConfig.lightTextPrimaryValue), fontWeight: FontWeight.w700, fontSize: 24, letterSpacing: 0.5, height: 1.5),
-        headlineLarge: TextStyle(color: Color(AppConfig.lightTextPrimaryValue), fontWeight: FontWeight.w600, fontSize: 22, height: 1.5),
-        headlineMedium: TextStyle(color: Color(AppConfig.lightTextPrimaryValue), fontWeight: FontWeight.w600, fontSize: 20, height: 1.5),
-        headlineSmall: TextStyle(color: Color(AppConfig.lightTextPrimaryValue), fontWeight: FontWeight.w600, fontSize: 18, height: 1.5),
-        bodyLarge: TextStyle(color: Color(AppConfig.lightTextPrimaryValue), fontWeight: FontWeight.w400, fontSize: 16, height: 1.5),
-        bodyMedium: TextStyle(color: Color(AppConfig.lightTextPrimaryValue), fontWeight: FontWeight.w400, fontSize: 14, height: 1.5),
-        bodySmall: TextStyle(color: Color(AppConfig.lightTextSecondaryValue), fontWeight: FontWeight.w400, fontSize: 12, height: 1.5),
-        labelLarge: TextStyle(color: Color(AppConfig.lightTextPrimaryValue), fontWeight: FontWeight.w600, fontSize: 14, height: 1.5),
-        labelMedium: TextStyle(color: Color(AppConfig.lightTextSecondaryValue), fontWeight: FontWeight.w500, fontSize: 12, height: 1.5),
-        labelSmall: TextStyle(color: Color(AppConfig.lightTextSecondaryValue), fontWeight: FontWeight.w300, fontSize: 10, height: 1.5),
-      ),
     );
   }
-  
+
   ThemeData _darkTheme() {
+    const primary = Color(AppConfig.primaryColorValue);
+    const surface = Color(AppConfig.darkSurfaceValue);
+    const background = Color(AppConfig.darkBackgroundValue);
+    const onPrimary = Colors.white;
+    const onSurface = Color(AppConfig.darkTextPrimaryValue);
+    const onSurfaceSecondary = Color(AppConfig.darkTextSecondaryValue);
+
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      primarySwatch: _createMaterialColor(const Color(0xFF8B7CF6)),
-      primaryColor: const Color(0xFF8B7CF6),
-      scaffoldBackgroundColor: const Color(AppConfig.darkBackgroundValue),
+      primaryColor: primary,
+      scaffoldBackgroundColor: background,
       colorScheme: const ColorScheme.dark(
-        primary: Color(0xFF8B7CF6), // Brighter purple for dark mode
-        secondary: Color(0xFF5FE3CF), // Brighter teal for dark mode
+        primary: primary,
+        onPrimary: onPrimary,
+        surface: surface,
+        onSurface: onSurface,
         error: Color(AppConfig.errorColorValue),
-        surface: Color(AppConfig.darkSurfaceValue),
-        onPrimary: Colors.white,
-        onSecondary: Color(AppConfig.darkBackgroundValue),
-        onSurface: Color(AppConfig.darkTextPrimaryValue),
         onError: Colors.white,
       ),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Color(AppConfig.darkSurfaceValue),
-        foregroundColor: Color(AppConfig.darkTextPrimaryValue),
+      textTheme: _poppinsTextTheme(primary, onSurface, onSurfaceSecondary),
+      appBarTheme: AppBarTheme(
+        backgroundColor: surface,
+        foregroundColor: onSurface,
         elevation: 0,
-        iconTheme: IconThemeData(color: Color(0xFF8B7CF6)),
+        iconTheme: const IconThemeData(color: primary),
+        titleTextStyle: GoogleFonts.poppins(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: onSurface,
+        ),
       ),
       cardTheme: CardThemeData(
-        color: const Color(AppConfig.darkCardValue),
+        color: surface,
         elevation: 4,
-        shadowColor: Colors.black.withOpacity(0.3),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF8B7CF6),
-          foregroundColor: Colors.white,
+          backgroundColor: primary,
+          foregroundColor: onPrimary,
           elevation: 4,
-          shadowColor: const Color(0xFF8B7CF6).withOpacity(0.3),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
         ),
       ),
-      textTheme: const TextTheme(
-        displayLarge: TextStyle(color: Color(AppConfig.darkTextPrimaryValue), fontWeight: FontWeight.w700, fontSize: 32, letterSpacing: 0.5, height: 1.5),
-        displayMedium: TextStyle(color: Color(AppConfig.darkTextPrimaryValue), fontWeight: FontWeight.w700, fontSize: 28, letterSpacing: 0.5, height: 1.5),
-        displaySmall: TextStyle(color: Color(AppConfig.darkTextPrimaryValue), fontWeight: FontWeight.w700, fontSize: 24, letterSpacing: 0.5, height: 1.5),
-        headlineLarge: TextStyle(color: Color(AppConfig.darkTextPrimaryValue), fontWeight: FontWeight.w600, fontSize: 22, height: 1.5),
-        headlineMedium: TextStyle(color: Color(AppConfig.darkTextPrimaryValue), fontWeight: FontWeight.w600, fontSize: 20, height: 1.5),
-        headlineSmall: TextStyle(color: Color(AppConfig.darkTextPrimaryValue), fontWeight: FontWeight.w600, fontSize: 18, height: 1.5),
-        bodyLarge: TextStyle(color: Color(AppConfig.darkTextPrimaryValue), fontWeight: FontWeight.w400, fontSize: 16, height: 1.5),
-        bodyMedium: TextStyle(color: Color(AppConfig.darkTextPrimaryValue), fontWeight: FontWeight.w400, fontSize: 14, height: 1.5),
-        bodySmall: TextStyle(color: Color(AppConfig.darkTextSecondaryValue), fontWeight: FontWeight.w400, fontSize: 12, height: 1.5),
-        labelLarge: TextStyle(color: Color(AppConfig.darkTextPrimaryValue), fontWeight: FontWeight.w600, fontSize: 14, height: 1.5),
-        labelMedium: TextStyle(color: Color(AppConfig.darkTextSecondaryValue), fontWeight: FontWeight.w500, fontSize: 12, height: 1.5),
-        labelSmall: TextStyle(color: Color(AppConfig.darkTextSecondaryValue), fontWeight: FontWeight.w300, fontSize: 10, height: 1.5),
-      ),
     );
-  }
-  
-  ThemeData _oceanTheme() {
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.light,
-      primarySwatch: _createMaterialColor(const Color(0xFF0891B2)),
-      primaryColor: const Color(0xFF0891B2),
-      scaffoldBackgroundColor: const Color(0xFFF0F9FF),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFF0891B2),
-        foregroundColor: Colors.white,
-        elevation: 2,
-      ),
-      cardTheme: CardThemeData(
-        color: Colors.white,
-        elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF0891B2),
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      ),
-      textTheme: const TextTheme(
-        bodyLarge: TextStyle(color: Color(0xFF0F172A)),
-        bodyMedium: TextStyle(color: Color(0xFF0F172A)),
-        bodySmall: TextStyle(color: Color(0xFF475569)),
-        titleLarge: TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold),
-        titleMedium: TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.w600),
-      ),
-    );
-  }
-  
-  ThemeData _forestTheme() {
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.light,
-      primarySwatch: _createMaterialColor(const Color(0xFF059669)),
-      primaryColor: const Color(0xFF059669),
-      scaffoldBackgroundColor: const Color(0xFFF0FDF4),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFF059669),
-        foregroundColor: Colors.white,
-        elevation: 2,
-      ),
-      cardTheme: CardThemeData(
-        color: Colors.white,
-        elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF059669),
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      ),
-      textTheme: const TextTheme(
-        bodyLarge: TextStyle(color: Color(0xFF14532D)),
-        bodyMedium: TextStyle(color: Color(0xFF14532D)),
-        bodySmall: TextStyle(color: Color(0xFF4ADE80)),
-        titleLarge: TextStyle(color: Color(0xFF14532D), fontWeight: FontWeight.bold),
-        titleMedium: TextStyle(color: Color(0xFF14532D), fontWeight: FontWeight.w600),
-      ),
-    );
-  }
-  
-  ThemeData _sunsetTheme() {
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.light,
-      primarySwatch: _createMaterialColor(const Color(0xFFEA580C)),
-      primaryColor: const Color(0xFFEA580C),
-      scaffoldBackgroundColor: const Color(0xFFFFF7ED),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFFEA580C),
-        foregroundColor: Colors.white,
-        elevation: 2,
-      ),
-      cardTheme: CardThemeData(
-        color: Colors.white,
-        elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFEA580C),
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      ),
-      textTheme: const TextTheme(
-        bodyLarge: TextStyle(color: Color(0xFF9A3412)),
-        bodyMedium: TextStyle(color: Color(0xFF9A3412)),
-        bodySmall: TextStyle(color: Color(0xFFC2410C)),
-        titleLarge: TextStyle(color: Color(0xFF9A3412), fontWeight: FontWeight.bold),
-        titleMedium: TextStyle(color: Color(0xFF9A3412), fontWeight: FontWeight.w600),
-      ),
-    );
-  }
-  
-  ThemeData _purpleTheme() {
-    return ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.light,
-      primarySwatch: _createMaterialColor(const Color(0xFF7C3AED)),
-      primaryColor: const Color(0xFF7C3AED),
-      scaffoldBackgroundColor: const Color(0xFFFAF5FF),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFF7C3AED),
-        foregroundColor: Colors.white,
-        elevation: 2,
-      ),
-      cardTheme: CardThemeData(
-        color: Colors.white,
-        elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF7C3AED),
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      ),
-      textTheme: const TextTheme(
-        bodyLarge: TextStyle(color: Color(0xFF581C87)),
-        bodyMedium: TextStyle(color: Color(0xFF581C87)),
-        bodySmall: TextStyle(color: Color(0xFF7C3AED)),
-        titleLarge: TextStyle(color: Color(0xFF581C87), fontWeight: FontWeight.bold),
-        titleMedium: TextStyle(color: Color(0xFF581C87), fontWeight: FontWeight.w600),
-      ),
-    );
-  }
-  
-  MaterialColor _createMaterialColor(Color color) {
-    List strengths = <double>[.05];
-    Map<int, Color> swatch = {};
-    final int r = color.red, g = color.green, b = color.blue;
-
-    for (int i = 1; i < 10; i++) {
-      strengths.add(0.1 * i);
-    }
-    for (var strength in strengths) {
-      final double ds = 0.5 - strength;
-      swatch[(strength * 1000).round()] = Color.fromRGBO(
-        r + ((ds < 0 ? r : (255 - r)) * ds).round(),
-        g + ((ds < 0 ? g : (255 - g)) * ds).round(),
-        b + ((ds < 0 ? b : (255 - b)) * ds).round(),
-        1,
-      );
-    }
-    return MaterialColor(color.value, swatch);
   }
 }
 
-/// Available app themes
+/// Light and dark themes only (redesign).
 enum AppTheme {
-  light('Light', Icons.light_mode, Color(0xFF6C63FF)),
-  dark('Dark', Icons.dark_mode, Color(0xFF8B7CF6)),
-  ocean('Ocean', Icons.waves, Color(0xFF0891B2)),
-  forest('Forest', Icons.forest, Color(0xFF059669)),
-  sunset('Sunset', Icons.wb_sunny, Color(0xFFEA580C)),
-  purple('Purple', Icons.palette, Color(0xFF7C3AED));
+  light('Light', Icons.light_mode, Color(AppConfig.primaryLightValue)),
+  dark('Dark', Icons.dark_mode, Color(AppConfig.primaryColorValue));
 
   const AppTheme(this.displayName, this.icon, this.primaryColor);
-  
+
   final String displayName;
   final IconData icon;
   final Color primaryColor;
-} 
+}

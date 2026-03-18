@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 import 'config/app_config.dart';
+import 'utils/app_logger.dart';
 import 'screens/splash_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/report_screen.dart';
@@ -29,8 +30,7 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
     } catch (e) {
-      print('⚠️ Screen orientation lock failed: $e');
-      // Continue without orientation lock
+      AppLogger.warn('Screen orientation lock failed: $e');
     }
   
     // Initialize Supabase with error handling (optional - don't block app start)
@@ -39,11 +39,9 @@ void main() async {
       url: AppConfig.supabaseUrl,
       anonKey: AppConfig.supabaseAnonKey,
       ).timeout(const Duration(seconds: 10));
-      print('✅ Supabase initialized successfully');
+      AppLogger.debug('Supabase initialized');
   } catch (e) {
-      print('⚠️ Supabase initialization error: $e');
-      print('📱 App will continue without Supabase connectivity');
-      // Continue without Supabase - app should work offline
+      AppLogger.warn('Supabase initialization error: $e');
   }
   
   // Set system UI overlay style
@@ -55,23 +53,21 @@ void main() async {
     ),
   );
     } catch (e) {
-      print('⚠️ System UI style failed: $e');
+      AppLogger.warn('System UI style failed: $e');
     }
   
     // Preload critical assets (optional - don't block app start)
     try {
       await _preloadAssets().timeout(const Duration(seconds: 5));
     } catch (e) {
-      print('⚠️ Asset preloading failed: $e');
-      // Continue without preloaded assets - they'll load on demand
+      AppLogger.warn('Asset preloading failed: $e');
     }
   
     // Initialize reports service with sample data (optional)
     try {
       await ReportsService().initializeSampleData().timeout(const Duration(seconds: 3));
     } catch (e) {
-      print('⚠️ Sample data initialization failed: $e');
-      // Continue without sample data
+      AppLogger.warn('Sample data initialization failed: $e');
     }
     
     // Initialize theme provider BEFORE creating app (CRITICAL FIX)
@@ -80,29 +76,25 @@ void main() async {
       await themeProvider.initializeTheme().timeout(
         const Duration(seconds: 2),
         onTimeout: () {
-          print('⚠️ Theme initialization timeout, using default light theme');
+          AppLogger.warn('Theme initialization timeout, using default dark theme');
         },
       );
     } catch (e) {
-      print('⚠️ Theme initialization error: $e');
-      // Continue with default theme
+      AppLogger.warn('Theme initialization error: $e');
     }
     
-    print('🚀 Starting FixMo app...');
+    AppLogger.debug('Starting FixMo app...');
     runApp(FixMoApp(themeProvider: themeProvider));
     
   } catch (e, stackTrace) {
-    // Critical error - log and try to start with minimal app
-    print('❌ CRITICAL ERROR in main(): $e');
-    print('Stack trace: $stackTrace');
+    AppLogger.error('CRITICAL ERROR in main()', e, stackTrace);
     
     // Try to start app anyway with minimal initialization
     try {
       WidgetsFlutterBinding.ensureInitialized();
       runApp(FixMoApp(themeProvider: ThemeProvider()));
     } catch (finalError) {
-      print('❌ FATAL: Cannot start app: $finalError');
-      // App will crash here, but at least we logged the error
+      AppLogger.error('FATAL: Cannot start app', finalError);
     }
   }
 }
@@ -110,17 +102,12 @@ void main() async {
 /// Preload critical assets to ensure they're available when needed
 Future<void> _preloadAssets() async {
   try {
-    print('📦 Preloading critical assets...');
-    
-    // Preload municipalities data
+    AppLogger.debug('Preloading critical assets...');
     final municipalitiesData = await rootBundle.loadString('assets/data/mauritius_municipalities.json');
     final json = jsonDecode(municipalitiesData);
-    print('📦 Preloaded municipalities: ${json['municipalities']?.length ?? 0}');
-    
-    print('📦 Asset preloading completed successfully');
+    AppLogger.debug('Preloaded municipalities: ${json['municipalities']?.length ?? 0}');
   } catch (e) {
-    print('⚠️ Asset preloading failed: $e');
-    // Continue anyway - app will handle missing assets gracefully
+    AppLogger.warn('Asset preloading failed: $e');
   }
 }
 
@@ -144,7 +131,14 @@ class FixMoApp extends StatelessWidget {
           return MaterialApp(
             title: AppConfig.appName,
             debugShowCheckedModeBanner: false,
-            theme: themeProvider.themeData,
+            theme: themeProvider.themeData.copyWith(
+              pageTransitionsTheme: const PageTransitionsTheme(
+                builders: {
+                  TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+                  TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+                },
+              ),
+            ),
             initialRoute: '/splash',
             routes: {
               '/splash': (context) => const SplashScreen(),

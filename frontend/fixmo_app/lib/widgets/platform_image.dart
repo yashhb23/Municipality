@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '../utils/app_logger.dart';
 
 /// A platform-aware image widget that handles File images on mobile and Uint8List on web
 class PlatformImage extends StatelessWidget {
@@ -92,7 +93,7 @@ extension FileExtension on File {
         return await readAsBytes();
       }
     } catch (e) {
-      print('Error reading file as bytes: $e');
+      AppLogger.error('Error reading file as bytes', e);
       return null;
     }
   }

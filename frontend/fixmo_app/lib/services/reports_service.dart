@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:geolocator/geolocator.dart';
 import '../models/report_model.dart';
+import '../utils/app_logger.dart';
 
 /// Service for managing civic reports data
 class ReportsService {
@@ -22,7 +23,7 @@ class ReportsService {
   Future<void> initializeSampleData() async {
     if (_reports.isNotEmpty) return; // Already initialized
 
-    print('🗂️ Initializing sample reports data...');
+    AppLogger.debug('Initializing sample reports data...');
 
     // Sample report data with various municipalities in Mauritius
     final sampleReports = [
@@ -222,7 +223,7 @@ class ReportsService {
       _reports.add(report);
     }
 
-    print('🗂️ Loaded ${_reports.length} sample reports');
+    AppLogger.debug('Loaded ${_reports.length} sample reports');
     _reportsController.add(_reports);
   }
 
@@ -256,7 +257,7 @@ class ReportsService {
   Future<void> addReport(ReportModel report) async {
     _reports.insert(0, report); // Add to beginning for newest first
     _reportsController.add(_reports);
-    print('📝 Added new report: ${report.title}');
+    AppLogger.debug('Added new report: ${report.title}');
   }
 
   /// Update an existing report
@@ -265,7 +266,7 @@ class ReportsService {
     if (index != -1) {
       _reports[index] = updatedReport;
       _reportsController.add(_reports);
-      print('📝 Updated report: ${updatedReport.title}');
+      AppLogger.debug('Updated report: ${updatedReport.title}');
     }
   }
 
@@ -273,7 +274,7 @@ class ReportsService {
   Future<void> deleteReport(String reportId) async {
     _reports.removeWhere((report) => report.id == reportId);
     _reportsController.add(_reports);
-    print('🗑️ Deleted report: $reportId');
+    AppLogger.debug('Deleted report: $reportId');
   }
 
   /// Get report by ID
@@ -301,7 +302,7 @@ class ReportsService {
 
   /// Refresh reports (simulate API call)
   Future<void> refreshReports() async {
-    print('🔄 Refreshing reports...');
+    AppLogger.debug('Refreshing reports...');
     await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
     _reportsController.add(_reports);
   }

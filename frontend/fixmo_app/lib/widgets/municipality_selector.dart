@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../config/app_config.dart';
 import '../providers/app_state_provider.dart';
 import '../services/location_service.dart';
+import '../utils/app_logger.dart';
 
 /// Widget for selecting municipality from dropdown
 class MunicipalitySelector extends StatefulWidget {
@@ -20,16 +21,16 @@ class _MunicipalitySelectorState extends State<MunicipalitySelector> {
   @override
   void initState() {
     super.initState();
-    print('🏙️ Municipality selector initializing...');
+    AppLogger.debug('Municipality selector initializing');
     _loadMunicipalities();
   }
 
   Future<void> _loadMunicipalities() async {
-    print('🏙️ Loading municipalities...');
+    AppLogger.debug('Loading municipalities...');
     final locationService = Provider.of<LocationService>(context, listen: false);
     try {
       final municipalities = await locationService.getAllMunicipalities();
-      print('🏙️ Loaded ${municipalities.length} municipalities');
+      AppLogger.debug('Loaded ${municipalities.length} municipalities');
       
       if (mounted) {
         setState(() {
@@ -37,10 +38,10 @@ class _MunicipalitySelectorState extends State<MunicipalitySelector> {
           _isLoading = false;
           _error = null;
         });
-        print('🏙️ Municipality selector state updated');
+        AppLogger.debug('Municipality selector state updated');
       }
     } catch (e) {
-      print('🏙️ Error loading municipalities: $e');
+      AppLogger.error('Error loading municipalities', e);
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -121,9 +122,7 @@ class _MunicipalitySelectorState extends State<MunicipalitySelector> {
         final hasValidSelection = selectedMunicipality != null && 
             _municipalities.any((m) => m['name'] == selectedMunicipality);
 
-        print('🏙️ Selected municipality: $selectedMunicipality');
-        print('🏙️ Has valid selection: $hasValidSelection');
-        print('🏙️ Available municipalities: ${_municipalities.map((m) => m['name']).toList()}');
+        AppLogger.debug('Municipality selection: $selectedMunicipality (valid: $hasValidSelection)');
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -185,7 +184,7 @@ class _MunicipalitySelectorState extends State<MunicipalitySelector> {
                 }).toList(),
                 onChanged: (String? value) {
                   if (value != null) {
-                    print('🏙️ Municipality manually selected: $value');
+                    AppLogger.debug('Municipality manually selected: $value');
                     appState.setMunicipality(value);
                   }
                 },

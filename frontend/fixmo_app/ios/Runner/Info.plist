@@ -41,6 +41,12 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>FixMo needs your location to show nearby incidents and tag your reports.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>FixMo needs camera access to photograph civic issues for your report.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>FixMo needs photo library access to attach images to your report.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
