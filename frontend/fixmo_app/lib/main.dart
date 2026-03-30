@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'dart:convert';
 
 import 'config/app_config.dart';
+import 'utils/app_logger.dart';
 import 'screens/splash_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/report_screen.dart';
@@ -118,7 +119,14 @@ class FixMoApp extends StatelessWidget {
           return MaterialApp(
             title: AppConfig.appName,
             debugShowCheckedModeBanner: false,
-            theme: themeProvider.themeData,
+            theme: themeProvider.themeData.copyWith(
+              pageTransitionsTheme: const PageTransitionsTheme(
+                builders: {
+                  TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
+                  TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+                },
+              ),
+            ),
             initialRoute: '/splash',
             routes: {
               '/splash': (context) => const SplashScreen(),

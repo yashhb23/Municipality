@@ -1,0 +1,15 @@
+{
+    "name": "fixmo-root",
+    "version": "1.0.0",
+    "description": "Root configuration for Railway deployment",
+    "scripts": {
+        "postinstall": "cd backend && npm install",
+        "start": "cd backend && node server.js"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "dependencies": {
+        "concurrently": "^8.0.0"
+    }
+}

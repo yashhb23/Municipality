@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:async';
 import 'dart:io';
+import 'package:uuid/uuid.dart';
 import 'dart:typed_data';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
@@ -42,6 +43,8 @@ class _ReportScreenState extends State<ReportScreen> {
   bool _showSuccessAnimation = false;
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+
 
   // Dark theme accent colors
   static const Color accentColor = Color(0xFF00D9A3); // Primary green
@@ -268,6 +271,7 @@ class _ReportScreenState extends State<ReportScreen> {
   void dispose() {
     _descriptionController.dispose();
     _locationController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 
@@ -555,7 +559,7 @@ class _ReportScreenState extends State<ReportScreen> {
           });
           
           // Generate temporary report ID for image upload
-          final tempReportId = DateTime.now().millisecondsSinceEpoch.toString();
+          final tempReportId = const Uuid().v4();
           
           if (kIsWeb && compressedImage is Uint8List) {
             // Web: Upload compressed bytes
@@ -1398,6 +1402,34 @@ class _ReportScreenState extends State<ReportScreen> {
                 borderSide: BorderSide(color: categoryColor, width: 2),
               ),
               hintStyle: TextStyle(color: Colors.grey.shade500),
+            ),
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Email field (Optional)
+          TextField(
+            controller: _emailController,
+            style: const TextStyle(fontSize: 16, color: Colors.black87),
+            keyboardType: TextInputType.emailAddress,
+            decoration: InputDecoration(
+              hintText: 'Your email for updates (Optional)',
+              filled: true,
+              fillColor: Colors.grey[50],
+              prefixIcon: Icon(Icons.email, color: categoryColor),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade200),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade200),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: categoryColor, width: 2),
+              ),
+              hintStyle: TextStyle(color: Colors.grey[500]),
             ),
           ),
         ],

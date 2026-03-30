@@ -31,6 +31,146 @@ class UploadProgressOverlay extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildProgress() {
+    return AnimatedBuilder(
+      animation: _pulseAnimation,
+      builder: (context, child) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 160,
+              height: 160,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  CustomPaint(
+                    size: const Size(160, 160),
+                    painter: _ProgressRingPainter(
+                      progress: widget.progress,
+                      trackColor: _trackColor,
+                      progressColor: _primary,
+                      strokeWidth: 6,
+                    ),
+                  ),
+                  Transform.scale(
+                    scale: _pulseAnimation.value,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '${(widget.progress * 100).toInt()}%',
+                          style: const TextStyle(
+                            fontSize: 36,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          widget.stage,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade400,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 28),
+            Text(
+              widget.stage,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade300,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _buildStageDots(),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildStageDots() {
+    final stages = ['Optimizing...', 'Uploading...', 'Saving...'];
+    final currentIndex = stages.indexOf(widget.stage);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(stages.length, (i) {
+        final active = i <= currentIndex;
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: active ? _primary : _trackColor,
+          ),
+        );
+      }),
+    );
+  }
+
+  Widget _buildSuccess() {
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 500),
+      tween: Tween(begin: 0.0, end: 1.0),
+      curve: Curves.elasticOut,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.scale(
+            scale: value,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _primary.withOpacity(0.2),
+                  ),
+                  child: const Icon(
+                    Icons.check_circle_rounded,
+                    size: 72,
+                    color: _primary,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Report Submitted',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Your report has been submitted',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
 class _ProgressView extends StatelessWidget {
@@ -234,6 +374,9 @@ class RetryDialog extends StatelessWidget {
     required this.onRetry,
     required this.onCancel,
   });
+
+  static const Color _primary = Color(0xFF00D9A3);
+  static const Color _surface = Color(0xFF1A1A1A);
 
   @override
   Widget build(BuildContext context) {

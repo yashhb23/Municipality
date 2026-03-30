@@ -156,7 +156,6 @@ class _HomeScreenState extends State<HomeScreen> {
     for (final report in reports) {
       final icon = await MapMarkerService.getReportMarker(
         category: report.category,
-        status: report.status,
         isCurrentUser: report.isCurrentUser,
       );
       markers.add(

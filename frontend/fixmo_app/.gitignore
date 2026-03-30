@@ -49,3 +49,8 @@ dart_define.env
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Environment secrets (never commit)
+.env
+*.keystore
+*.jks

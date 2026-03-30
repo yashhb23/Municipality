@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../models/report_model.dart';
 import '../config/app_config.dart';
+import '../utils/app_logger.dart';
 
 /// JPEG, PNG, and WebP magic byte signatures for client-side validation.
 const _jpegSignature = [0xFF, 0xD8, 0xFF];
@@ -16,7 +17,6 @@ class SupabaseService {
   final SupabaseClient _client = Supabase.instance.client;
   final Uuid _uuid = const Uuid();
 
-  /// Get Supabase client instance
   SupabaseClient get client => _client;
 
   /// Check if device has internet connection and Supabase is reachable.
@@ -78,7 +78,7 @@ class SupabaseService {
         // Exponential backoff
         debugPrint('⏳ Waiting ${delay.inSeconds}s before retry...');
         await Future.delayed(delay);
-        delay *= 2; // Double the delay for next attempt
+        delay *= 2;
       }
     }
 
@@ -88,10 +88,7 @@ class SupabaseService {
   /// Test connection to Supabase
   Future<bool> testConnection() async {
     try {
-      final response = await _client
-          .from('municipalities')
-          .select('count')
-          .limit(1);
+      await _client.from('municipalities').select('count').limit(1);
       return true;
     } catch (e) {
       debugPrint('❌ Supabase connection failed: $e');
@@ -111,7 +108,7 @@ class SupabaseService {
       try {
         if (imageSource is File) {
           if (!await imageSource.exists()) {
-            throw Exception('Image file does not exist at path: ${imageSource.path}');
+            throw Exception('Image file does not exist');
           }
 
           final fileBytes = await imageSource.readAsBytes();
@@ -122,17 +119,13 @@ class SupabaseService {
           
           await _client.storage
               .from('reportimages')
-              .upload(
-                filePath, 
-                imageSource,
-                fileOptions: const FileOptions(
-                  cacheControl: '3600',
-                  upsert: false,
-                  contentType: 'image/jpeg',
-                ),
-              )
+              .upload(filePath, imageSource,
+                  fileOptions: const FileOptions(
+                    cacheControl: '3600',
+                    upsert: false,
+                    contentType: 'image/jpeg',
+                  ))
               .timeout(AppConfig.uploadTimeout);
-              
         } else if (imageSource is Uint8List) {
           final validationError = validateImageBytes(imageSource);
           if (validationError != null) throw Exception(validationError);
@@ -141,17 +134,13 @@ class SupabaseService {
           
           await _client.storage
               .from('reportimages')
-              .uploadBinary(
-                filePath, 
-                imageSource,
-                fileOptions: const FileOptions(
-                  cacheControl: '3600',
-                  upsert: false,
-                  contentType: 'image/jpeg',
-                ),
-              )
+              .uploadBinary(filePath, imageSource,
+                  fileOptions: const FileOptions(
+                    cacheControl: '3600',
+                    upsert: false,
+                    contentType: 'image/jpeg',
+                  ))
               .timeout(AppConfig.uploadTimeout);
-              
         } else {
           throw Exception('Unsupported image source type: ${imageSource.runtimeType}');
         }
@@ -164,11 +153,8 @@ class SupabaseService {
         debugPrint('✅ Image uploaded successfully');
         debugPrint('   Public URL: $publicUrl');
         return publicUrl;
-        
       } catch (e) {
-        // Enhanced error diagnostics
         final errorStr = e.toString().toLowerCase();
-        
         if (errorStr.contains('socketexception') || errorStr.contains('failed host lookup')) {
           debugPrint('❌ DNS ERROR: Cannot reach Supabase server');
           debugPrint('   Check your Supabase project URL: ${AppConfig.supabaseUrl}');
@@ -254,7 +240,6 @@ class SupabaseService {
     }
   }
 
-  /// Get reports by status
   Future<List<ReportModel>> getReportsByStatus(String status) async {
     try {
       debugPrint('🔄 Fetching reports with status: $status');
@@ -277,7 +262,6 @@ class SupabaseService {
     }
   }
 
-  /// Get all reports (for testing and admin purposes)
   Future<List<ReportModel>> getAllReports() async {
     try {
       debugPrint('🔄 Fetching all reports...');
@@ -332,14 +316,7 @@ class SupabaseService {
           .from('reports')
           .select('status')
           .eq('municipality', municipality);
-      
-      Map<String, int> stats = {
-        'total': response.length,
-        'pending': 0,
-        'in_progress': 0,
-        'resolved': 0,
-      };
-      
+      Map<String, int> stats = {'total': response.length, 'pending': 0, 'in_progress': 0, 'resolved': 0};
       for (var report in response) {
         final status = report['status'] as String;
         stats[status] = (stats[status] ?? 0) + 1;
@@ -358,7 +335,6 @@ class SupabaseService {
     }
   }
 
-  /// Get all municipalities from database
   Future<List<Map<String, dynamic>>> getMunicipalities() async {
     try {
       debugPrint('🔄 Fetching municipalities from database...');
@@ -376,7 +352,6 @@ class SupabaseService {
     }
   }
 
-  /// Test database and storage setup
   Future<Map<String, bool>> testSetup() async {
     Map<String, bool> results = {
       'database_connection': false,
@@ -384,28 +359,18 @@ class SupabaseService {
       'municipalities_table': false,
       'storage_bucket': false,
     };
-
     try {
-      // Test database connection
       await _client.from('municipalities').select('count').limit(1);
       results['database_connection'] = true;
-      
-      // Test reports table
       await _client.from('reports').select('count').limit(1);
       results['reports_table'] = true;
-      
-      // Test municipalities table  
       await _client.from('municipalities').select('count').limit(1);
       results['municipalities_table'] = true;
-      
-      // Test storage bucket
       final buckets = await _client.storage.listBuckets();
       results['storage_bucket'] = buckets.any((bucket) => bucket.id == 'reportimages');
-      
     } catch (e) {
       debugPrint('❌ Setup test failed: $e');
     }
-
     return results;
   }
 

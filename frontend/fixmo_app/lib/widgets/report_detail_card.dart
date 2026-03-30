@@ -13,6 +13,9 @@ class ReportDetailCard extends StatelessWidget {
     required this.onClose,
   });
 
+  static const Color _surface = Color(0xFF1A1A1A);
+  static const Color _primary = Color(0xFF00D9A3);
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;

@@ -15,6 +15,7 @@ class ReportModel {
   final String municipality;
   final List<String> imageUrls;
   final String reporterName;
+  final String? reporterEmail;
   final String? reporterAvatar;
   final bool isCurrentUser;
   final int priority;
@@ -33,6 +34,7 @@ class ReportModel {
     required this.municipality,
     required this.imageUrls,
     required this.reporterName,
+    this.reporterEmail,
     this.reporterAvatar,
     this.isCurrentUser = false,
     this.priority = 1,
@@ -48,8 +50,8 @@ class ReportModel {
       category: json['category'] ?? '',
       subcategory: json['subcategory'] ?? '',
       status: json['status'] ?? 'pending',
-      createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
-      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
+      createdAt: DateTime.parse(json['created_at'] ?? DateTime.now().toIso8601String()),
+      updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : null,
       location: Position(
         latitude: json['latitude']?.toDouble() ?? 0.0,
         longitude: json['longitude']?.toDouble() ?? 0.0,
@@ -63,8 +65,9 @@ class ReportModel {
         speedAccuracy: 0.0,
       ),
       municipality: json['municipality'] ?? '',
-      imageUrls: List<String>.from(json['imageUrls'] ?? []),
-      reporterName: json['reporterName'] ?? 'Anonymous',
+      imageUrls: json['image_url'] != null ? [json['image_url']] : [],
+      reporterName: json['reporter_name'] ?? 'Anonymous',
+      reporterEmail: json['reporter_email'],
       reporterAvatar: json['reporterAvatar'],
       isCurrentUser: json['isCurrentUser'] ?? false,
       priority: json['priority'] ?? 1,
@@ -81,16 +84,15 @@ class ReportModel {
       'category': category,
       'subcategory': subcategory,
       'status': status,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt?.toIso8601String(),
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String(),
       'latitude': location.latitude,
       'longitude': location.longitude,
       'municipality': municipality,
-      'imageUrls': imageUrls,
-      'reporterName': reporterName,
-      'reporterAvatar': reporterAvatar,
-      'isCurrentUser': isCurrentUser,
-      'priority': priority,
+      'image_url': imageUrls.isNotEmpty ? imageUrls.first : null,
+      'reporter_name': reporterName,
+      'reporter_email': reporterEmail,
+      'reporter_avatar': reporterAvatar,
       'address': address,
     };
   }
@@ -161,6 +163,7 @@ class ReportModel {
     String? municipality,
     List<String>? imageUrls,
     String? reporterName,
+    String? reporterEmail,
     String? reporterAvatar,
     bool? isCurrentUser,
     int? priority,
@@ -179,6 +182,7 @@ class ReportModel {
       municipality: municipality ?? this.municipality,
       imageUrls: imageUrls ?? this.imageUrls,
       reporterName: reporterName ?? this.reporterName,
+      reporterEmail: reporterEmail ?? this.reporterEmail,
       reporterAvatar: reporterAvatar ?? this.reporterAvatar,
       isCurrentUser: isCurrentUser ?? this.isCurrentUser,
       priority: priority ?? this.priority,
@@ -188,7 +192,6 @@ class ReportModel {
 
   /// Get formatted date string for display
   String get formattedDate {
-    if (createdAt == null) return 'Unknown date';
     
     final now = DateTime.now();
     final difference = now.difference(createdAt);

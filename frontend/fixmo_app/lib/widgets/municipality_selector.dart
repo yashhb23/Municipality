@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../config/app_config.dart';
 import '../providers/app_state_provider.dart';
 import '../services/location_service.dart';
+import '../utils/app_logger.dart';
 
 /// Widget for selecting municipality from dropdown
 class MunicipalitySelector extends StatefulWidget {

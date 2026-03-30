@@ -38,12 +38,12 @@ WITH CHECK (bucket_id = 'reportimages');
 -- Policy 3: Enable update for users based on user_id (UPDATE)
 CREATE POLICY "Enable update for users based on user_id" 
 ON storage.objects FOR UPDATE 
-USING (bucket_id = 'reportimages' AND auth.uid()::text = owner);
+USING (bucket_id = 'reportimages' AND auth.uid() = owner);
 
 -- Policy 4: Enable delete for users based on user_id (DELETE)
 CREATE POLICY "Enable delete for users based on user_id" 
 ON storage.objects FOR DELETE 
-USING (bucket_id = 'reportimages' AND auth.uid()::text = owner);
+USING (bucket_id = 'reportimages' AND auth.uid() = owner);
 
 -- Step 4: Ensure reports table exists with proper structure
 CREATE TABLE IF NOT EXISTS public.reports (
@@ -57,9 +57,14 @@ CREATE TABLE IF NOT EXISTS public.reports (
     longitude DOUBLE PRECISION NOT NULL,
     address TEXT,
     image_url TEXT,
-    status VARCHAR(50) DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'resolved')),
+    status VARCHAR(50) DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'resolved', 'rejected')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    reporter_name VARCHAR(255) DEFAULT 'Anonymous',
+    reporter_email VARCHAR(255),
+    reporter_avatar TEXT,
+    is_current_user BOOLEAN DEFAULT false,
+    priority INTEGER DEFAULT 1
 );
 
 -- Step 5: Enable RLS and create policies for reports table
@@ -179,4 +184,4 @@ ON CONFLICT DO NOTHING;
 SELECT 'Database setup completed successfully!' as status;
 SELECT COUNT(*) as total_reports FROM public.reports;
 SELECT COUNT(*) as total_municipalities FROM public.municipalities;
-SELECT name, bucket_id FROM storage.buckets WHERE id = 'reportimages'; 
+SELECT id, name, public FROM storage.buckets WHERE id = 'reportimages'; 

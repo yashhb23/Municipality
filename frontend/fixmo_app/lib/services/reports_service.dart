@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import '../models/report_model.dart';
+import '../utils/app_logger.dart';
 
 /// Service for managing civic reports data.
 ///

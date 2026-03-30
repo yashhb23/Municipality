@@ -132,6 +132,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  static const Color _bg = Color(0xFF0A0A0A);
+  static const Color _surface = Color(0xFF1A1A1A);
+  static const Color _primary = Color(0xFF00D9A3);
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;

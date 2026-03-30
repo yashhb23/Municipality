@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:math' as math;
@@ -33,12 +34,21 @@ class _FullScreenMapState extends State<FullScreenMap>
   late Animation<double> _fadeAnimation;
   ReportModel? _selectedReport;
   bool _isLoading = true;
+  String? _mapStyleJson;
 
   @override
   void initState() {
     super.initState();
     _setupAnimations();
+    _loadMapStyle();
     _initializeMap();
+  }
+
+  Future<void> _loadMapStyle() async {
+    try {
+      _mapStyleJson = await rootBundle.loadString('assets/map_styles/dark_map_style.json');
+      if (mounted) setState(() {});
+    } catch (_) {}
   }
 
   void _setupAnimations() {
@@ -158,6 +168,7 @@ class _FullScreenMapState extends State<FullScreenMap>
 
   void _onMapCreated(GoogleMapController controller) {
     _mapController = controller;
+    if (_mapStyleJson != null) controller.setMapStyle(_mapStyleJson);
     _fitMapToMarkers();
   }
 
@@ -207,14 +218,14 @@ class _FullScreenMapState extends State<FullScreenMap>
           opacity: _fadeAnimation,
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: const Color(0xFF1A1A1A),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(20),
                 topRight: Radius.circular(20),
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
+                  color: Colors.black.withOpacity(0.4),
                   blurRadius: 20,
                   offset: const Offset(0, -5),
                 ),
@@ -229,7 +240,7 @@ class _FullScreenMapState extends State<FullScreenMap>
                     vertical: 16,
                   ),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor,
+                    color: const Color(0xFF00D9A3),
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(20),
                       topRight: Radius.circular(20),
@@ -283,7 +294,7 @@ class _FullScreenMapState extends State<FullScreenMap>
                       // Google Map
                       _isLoading
                           ? const Center(
-                              child: CircularProgressIndicator(),
+                              child: CircularProgressIndicator(color: Color(0xFF00D9A3)),
                             )
                           : GoogleMap(
                               onMapCreated: _onMapCreated,
@@ -335,11 +346,12 @@ class _FullScreenMapState extends State<FullScreenMap>
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: const Color(0xFF1A1A1A),
                             borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.white.withOpacity(0.1)),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
+                                color: Colors.black.withOpacity(0.3),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
@@ -353,21 +365,22 @@ class _FullScreenMapState extends State<FullScreenMap>
                                 'Legend',
                                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
+                                  color: Colors.white,
                                 ),
                               ),
                               const SizedBox(height: 8),
                               _buildLegendItem(
-                                color: Colors.blue,
+                                color: const Color(0xFF00D9A3),
                                 label: 'Your Location',
                               ),
                               const SizedBox(height: 4),
                               _buildLegendItem(
-                                color: Colors.green,
+                                color: const Color(0xFF00D9A3),
                                 label: 'Your Reports',
                               ),
                               const SizedBox(height: 4),
                               _buildLegendItem(
-                                color: Colors.red,
+                                color: Colors.white70,
                                 label: 'Other Reports',
                               ),
                             ],
@@ -400,7 +413,7 @@ class _FullScreenMapState extends State<FullScreenMap>
         const SizedBox(width: 8),
         Text(
           label,
-          style: Theme.of(context).textTheme.bodySmall,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey.shade300),
         ),
       ],
     );

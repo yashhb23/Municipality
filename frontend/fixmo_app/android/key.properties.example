@@ -1,0 +1,12 @@
+# Release keystore configuration for FixMo
+# Copy this file to key.properties and fill in your values.
+# key.properties is gitignored and must NOT be committed.
+#
+# Generate a keystore:
+#   keytool -genkey -v -keystore fixmo-release.keystore \
+#     -alias fixmo -keyalg RSA -keysize 2048 -validity 10000
+
+storePassword=YOUR_STORE_PASSWORD
+keyPassword=YOUR_KEY_PASSWORD
+keyAlias=fixmo
+storeFile=/path/to/your/fixmo-release.keystore
