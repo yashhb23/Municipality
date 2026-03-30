@@ -1,9 +1,9 @@
-/// FixMo Application Configuration
+﻿/// FixMo Application Configuration
 ///
 /// Secrets are injected at build time via --dart-define or
 /// --dart-define-from-file=dart_define.env. Never hardcode keys here.
 class AppConfig {
-  // Supabase Configuration — injected at build time
+  // Supabase Configuration â€” injected at build time
   static const String supabaseUrl =
       String.fromEnvironment('SUPABASE_URL');
   static const String supabaseAnonKey =
@@ -15,7 +15,7 @@ class AppConfig {
   static const int maxRetryAttempts = 3;
   static const int retryDelaySeconds = 2;
 
-  // Google Maps Configuration — injected at build time
+  // Google Maps Configuration â€” injected at build time
   static const String googleMapsApiKey =
       String.fromEnvironment('GOOGLE_MAPS_API_KEY');
   
@@ -43,9 +43,9 @@ class AppConfig {
   
   // Supported Languages
   static const List<Map<String, String>> supportedLanguages = [
-    {'code': 'en', 'name': 'English', 'flag': '🇬🇧'},
-    {'code': 'fr', 'name': 'Français', 'flag': '🇫🇷'},
-    {'code': 'mfe', 'name': 'Kreol Morisien', 'flag': '🇲🇺'},
+    {'code': 'en', 'name': 'English', 'flag': 'ðŸ‡¬ðŸ‡§'},
+    {'code': 'fr', 'name': 'FranÃ§ais', 'flag': 'ðŸ‡«ðŸ‡·'},
+    {'code': 'mfe', 'name': 'Kreol Morisien', 'flag': 'ðŸ‡²ðŸ‡º'},
   ];
   
   // Maximum file sizes
@@ -54,6 +54,9 @@ class AppConfig {
   
   // Modern App Colors - Elderly-friendly with good contrast
   static const int primaryColorValue = 0xFF6C63FF;    // Primary Purple
+  /// Light-theme primary (branding); can differ from dark primary.
+  static const int primaryLightValue = 0xFF6C63FF;
+
   static const int secondaryColorValue = 0xFF4ECDC4;  // Teal
   static const int accentColorValue = 0xFFFF6B6B;     // Coral Red
   
@@ -79,7 +82,7 @@ class AppConfig {
   static const int lightTextPrimaryValue = 0xFF1E293B;  // Dark gray for light mode
   static const int lightTextSecondaryValue = 0xFF64748B;// Muted for light mode
   
-  // Backend API base URL — injected at build time
+  // Backend API base URL â€” injected at build time
   static const String backendUrl =
       String.fromEnvironment('BACKEND_URL', defaultValue: 'https://municipality-production.up.railway.app');
 
