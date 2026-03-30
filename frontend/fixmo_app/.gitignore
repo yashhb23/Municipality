@@ -54,3 +54,7 @@ dart_define.env
 .env
 *.keystore
 *.jks
+
+# Local build transcripts
+build_log*.txt
+
