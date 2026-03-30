@@ -1,0 +1,21 @@
+# Environment files — NEVER commit secrets
+.env
+.env.*
+!.env.example
+dart_define.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Flutter build artifacts
+build/

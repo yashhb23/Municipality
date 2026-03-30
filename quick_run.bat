@@ -23,6 +23,6 @@ C:\Users\yashb\flutter2\bin\flutter.bat devices
 
 REM Run the app
 echo Starting FixMo app...
-C:\Users\yashb\flutter2\bin\flutter.bat run -d emulator-5554
+C:\Users\yashb\flutter2\bin\flutter.bat run -d emulator-5554 --dart-define-from-file=dart_define.env
 
 pause 

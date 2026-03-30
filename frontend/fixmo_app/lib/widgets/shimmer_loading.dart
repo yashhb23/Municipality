@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-/// Shimmer loading effect widget for skeleton screens
+/// Shimmer loading effect widget for skeleton screens.
+/// Colors adapt to light/dark theme via Theme.of(context).
 class ShimmerLoading extends StatefulWidget {
   final double width;
   final double height;
@@ -45,9 +46,9 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final baseColor = isDark ? const Color(0xFF2A2A3E) : const Color(0xFFE0E0E0);
-    final highlightColor = isDark ? const Color(0xFF3A3A4E) : const Color(0xFFF5F5F5);
+    final cs = Theme.of(context).colorScheme;
+    final baseColor = cs.surfaceContainerHighest;
+    final highlightColor = cs.surface;
 
     return AnimatedBuilder(
       animation: _animation,
@@ -60,11 +61,7 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
             gradient: LinearGradient(
               begin: Alignment(_animation.value - 1, 0),
               end: Alignment(_animation.value, 0),
-              colors: [
-                baseColor,
-                highlightColor,
-                baseColor,
-              ],
+              colors: [baseColor, highlightColor, baseColor],
               stops: const [0.0, 0.5, 1.0],
             ),
           ),
@@ -171,7 +168,7 @@ class ShimmerImagePlaceholder extends StatelessWidget {
         child: Icon(
           Icons.image_outlined,
           size: 48,
-          color: Colors.white.withOpacity(0.3),
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.2),
         ),
       ),
     );

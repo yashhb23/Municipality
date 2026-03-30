@@ -15,10 +15,10 @@
         android:icon="@mipmap/ic_launcher"
         android:requestLegacyExternalStorage="true">
         
-        <!-- Google Maps API Key -->
+        <!-- Google Maps API Key — injected via manifestPlaceholders in build.gradle.kts -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyCNdvXwGAHaNdTsMcSeSlNy9cTB7YlrWP4" />
+            android:value="${mapsApiKey}" />
             
         <activity
             android:name=".MainActivity"

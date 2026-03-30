@@ -1,18 +1,23 @@
 /// FixMo Application Configuration
-/// Contains all API keys, URLs, and app constants
+///
+/// Secrets are injected at build time via --dart-define or
+/// --dart-define-from-file=dart_define.env. Never hardcode keys here.
 class AppConfig {
-  // Supabase Configuration
-  static const String supabaseUrl = 'https://iexhralidwrmfrggxtrh.supabase.co';
-  static const String supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlleHhyYWxpZHdybWZyZ2d4dHJoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY4NTk5MTYsImV4cCI6MjA2MjQzNTkxNn0.ira3b5nui4LDhbKRsQ4iRgQKQm7hKXB-CmqFPVSdPaI';
-  
+  // Supabase Configuration — injected at build time
+  static const String supabaseUrl =
+      String.fromEnvironment('SUPABASE_URL');
+  static const String supabaseAnonKey =
+      String.fromEnvironment('SUPABASE_ANON_KEY');
+
   // Network Configuration
   static const Duration uploadTimeout = Duration(seconds: 30);
   static const Duration queryTimeout = Duration(seconds: 10);
   static const int maxRetryAttempts = 3;
-  static const int retryDelaySeconds = 2; // Base delay for exponential backoff
-  
-  // Google Maps Configuration
-  static const String googleMapsApiKey = 'AIzaSyCNdvXwGAHaNdTsMcSeSlNy9cTB7YlrWP4';
+  static const int retryDelaySeconds = 2;
+
+  // Google Maps Configuration — injected at build time
+  static const String googleMapsApiKey =
+      String.fromEnvironment('GOOGLE_MAPS_API_KEY');
   
   // App Information
   static const String appName = 'FixMo';
@@ -74,7 +79,28 @@ class AppConfig {
   static const int lightTextPrimaryValue = 0xFF1E293B;  // Dark gray for light mode
   static const int lightTextSecondaryValue = 0xFF64748B;// Muted for light mode
   
+  // Backend API base URL — injected at build time
+  static const String backendUrl =
+      String.fromEnvironment('BACKEND_URL', defaultValue: 'https://municipality-production.up.railway.app');
+
+  static const Duration backendTimeout = Duration(seconds: 15);
+
   // Environment check
   static bool get isProduction => const bool.fromEnvironment('dart.vm.product');
   static bool get isDevelopment => !isProduction;
+
+  /// Validates that all required build-time config is present.
+  /// Call once during app startup; throws [StateError] if anything is missing.
+  static void validate() {
+    final missing = <String>[];
+    if (supabaseUrl.isEmpty) missing.add('SUPABASE_URL');
+    if (supabaseAnonKey.isEmpty) missing.add('SUPABASE_ANON_KEY');
+    if (googleMapsApiKey.isEmpty) missing.add('GOOGLE_MAPS_API_KEY');
+    if (missing.isNotEmpty) {
+      throw StateError(
+        'Missing required --dart-define values: ${missing.join(', ')}.\n'
+        'Run with: flutter run --dart-define-from-file=dart_define.env',
+      );
+    }
+  }
 } 

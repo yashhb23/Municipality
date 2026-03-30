@@ -92,7 +92,7 @@ extension FileExtension on File {
         return await readAsBytes();
       }
     } catch (e) {
-      print('Error reading file as bytes: $e');
+      debugPrint('Error reading file as bytes: $e');
       return null;
     }
   }

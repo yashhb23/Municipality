@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config/app_config.dart';
@@ -29,7 +30,7 @@ class ThemeProvider extends ChangeNotifier {
       notifyListeners();
       }
     } catch (e) {
-      print('⚠️ Theme initialization failed, using default: $e');
+      debugPrint('⚠️ Theme initialization failed, using default: $e');
       // Continue with default light theme
     }
   }

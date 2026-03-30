@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
@@ -11,11 +12,14 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import '../config/app_config.dart';
 import '../services/supabase_service.dart';
+import '../services/backend_api_service.dart';
 import '../services/location_service.dart';
 import '../providers/app_state_provider.dart';
+import '../providers/auth_provider.dart';
 import '../models/report_model.dart';
 import '../widgets/platform_image.dart';
 import '../widgets/upload_progress_overlay.dart';
+import '../utils/app_logger.dart';
 
 /// Screen for creating new reports with camera and form
 class ReportScreen extends StatefulWidget {
@@ -39,14 +43,15 @@ class _ReportScreenState extends State<ReportScreen> {
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
 
-  // Modern accent colors
-  static const Color accentColor = Color(0xFF6C63FF); // Modern purple
-  static const Color secondaryAccent = Color(0xFF4ECDC4); // Teal
+  // Dark theme accent colors
+  static const Color accentColor = Color(0xFF00D9A3); // Primary green
+  static const Color secondaryAccent = Color(0xFF00B386); // Darker green
   static const Color warningAccent = Color(0xFFFF6B6B); // Coral red
-  static const Color successAccent = Color(0xFF4ECDC4); // Green teal
+  static const Color successAccent = Color(0xFF00D9A3); // Green
 
-  // Enhanced civic problem categories for Mauritius
-  final Map<String, Map<String, List<String>>> _problemCategories = {
+  // Categories: loaded from backend API, with hardcoded fallback.
+  // Once the database has specific_issues seeded, the fallback can be removed.
+  Map<String, Map<String, List<String>>> _problemCategories = {
     'Roads & Transport': {
       'Road Damage': [
         'Potholes', 
@@ -201,6 +206,39 @@ class _ReportScreenState extends State<ReportScreen> {
   void initState() {
     super.initState();
     _getCurrentLocation();
+    _loadCategoriesFromApi();
+  }
+
+  /// Attempt to load categories from the backend API.
+  /// Falls back silently to the hardcoded map if the API is unreachable.
+  Future<void> _loadCategoriesFromApi() async {
+    try {
+      final api = BackendApiService();
+      final categories = await api.getCategories();
+      if (categories.isEmpty) return;
+
+      final Map<String, Map<String, List<String>>> fetched = {};
+      for (final cat in categories) {
+        final catName = cat['name'] as String? ?? '';
+        final subs = cat['subcategories'] as List<dynamic>? ?? [];
+        final Map<String, List<String>> subMap = {};
+        for (final sub in subs) {
+          final subName = sub['name'] as String? ?? '';
+          // specific_issues not yet seeded in DB — empty list is fine
+          subMap[subName] = [];
+        }
+        if (subMap.isNotEmpty) {
+          fetched[catName] = subMap;
+        }
+      }
+
+      if (fetched.isNotEmpty && mounted) {
+        setState(() => _problemCategories = fetched);
+        AppLogger.debug('Categories loaded from backend API');
+      }
+    } catch (e) {
+      AppLogger.debug('Backend categories unavailable, using hardcoded fallback');
+    }
   }
 
   Future<void> _getCurrentLocation() async {
@@ -217,7 +255,7 @@ class _ReportScreenState extends State<ReportScreen> {
         _locationController.text = appState.selectedMunicipality ?? 'Current Location';
       }
     } catch (e) {
-      print('Error getting location: $e');
+      AppLogger.error('Error getting location', e);
       // Use app state location as fallback
       final appState = context.read<AppStateProvider>();
       setState(() {
@@ -238,7 +276,7 @@ class _ReportScreenState extends State<ReportScreen> {
     
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFF1A1A1A),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -252,7 +290,7 @@ class _ReportScreenState extends State<ReportScreen> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
+                  color: Colors.white24,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -261,6 +299,7 @@ class _ReportScreenState extends State<ReportScreen> {
                 'Add Photo Evidence',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
               ),
               const SizedBox(height: 24),
@@ -279,6 +318,13 @@ class _ReportScreenState extends State<ReportScreen> {
                         );
                         if (image != null) {
                           await _handleImageSelected(image);
+                        } else if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Camera access denied. You can enable it in Settings.'),
+                              duration: Duration(seconds: 4),
+                            ),
+                          );
                         }
                       },
                     ),
@@ -297,6 +343,13 @@ class _ReportScreenState extends State<ReportScreen> {
                         );
                         if (image != null) {
                           await _handleImageSelected(image);
+                        } else if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Gallery access denied. You can enable it in Settings.'),
+                              duration: Duration(seconds: 4),
+                            ),
+                          );
                         }
                       },
                     ),
@@ -328,9 +381,9 @@ class _ReportScreenState extends State<ReportScreen> {
           _capturedImageBytes = null; // Clear bytes reference
         });
       }
-      print('📸 Image selected successfully (${kIsWeb ? 'web' : 'mobile'} mode)');
+      AppLogger.debug('Image selected (${kIsWeb ? 'web' : 'mobile'} mode)');
     } catch (e) {
-      print('❌ Error handling selected image: $e');
+      AppLogger.error('Error handling selected image', e);
       // Show error to user
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -489,11 +542,11 @@ class _ReportScreenState extends State<ReportScreen> {
           if (kIsWeb && _capturedImageBytes != null) {
             // Web: Compress bytes
             compressedImage = await _compressImageBytes(_capturedImageBytes!);
-            print('🖼️ Image compressed for web upload');
+            AppLogger.debug('Image compressed for web upload');
           } else if (!kIsWeb && _capturedImage != null) {
             // Mobile: Compress file
             compressedImage = await _compressImageFile(_capturedImage!);
-            print('🖼️ Image compressed for mobile upload');
+            AppLogger.debug('Image compressed for mobile upload');
           }
           
           setState(() {
@@ -507,18 +560,17 @@ class _ReportScreenState extends State<ReportScreen> {
           if (kIsWeb && compressedImage is Uint8List) {
             // Web: Upload compressed bytes
             imageUrl = await supabaseService.uploadImage(compressedImage, tempReportId);
-            print('🖼️ Image uploaded successfully (web): $imageUrl');
+            AppLogger.debug('Image uploaded (web)');
           } else if (!kIsWeb && compressedImage is File) {
-            // Mobile: Upload compressed file
             imageUrl = await supabaseService.uploadImage(compressedImage, tempReportId);
-            print('🖼️ Image uploaded successfully (mobile): $imageUrl');
+            AppLogger.debug('Image uploaded (mobile)');
           }
           
           setState(() {
             _uploadProgress = 0.6;
           });
         } catch (e) {
-          print('⚠️ Image upload failed: $e');
+          AppLogger.error('Image upload failed', e);
           if (mounted) {
             _showRetryDialog('Image upload failed: ${e.toString()}');
             return;
@@ -526,47 +578,75 @@ class _ReportScreenState extends State<ReportScreen> {
         }
       }
 
-      // Create report model
+      // Submit report via backend API, fall back to direct Supabase insert
       setState(() {
         _uploadProgress = 0.7;
         _uploadStage = 'Saving report...';
       });
-      
-      final report = ReportModel(
-        id: DateTime.now().millisecondsSinceEpoch.toString(), // Temporary ID
-        title: _selectedSpecificIssue ?? _selectedSubcategory ?? 'Issue Report',
-        description: _descriptionController.text.isNotEmpty 
-            ? _descriptionController.text 
-            : 'No additional details provided',
-        category: _selectedCategory ?? 'General',
-        subcategory: _selectedSubcategory ?? 'Other',
-        status: 'pending',
-        createdAt: DateTime.now(),
-        location: _reportLocation ?? Position(
-          latitude: -20.2, // Default to Mauritius center
-          longitude: 57.5,
-          timestamp: DateTime.now(),
-          accuracy: 0.0,
-          altitude: 0.0,
-          altitudeAccuracy: 0.0,
-          heading: 0.0,
-          headingAccuracy: 0.0,
-          speed: 0.0,
-          speedAccuracy: 0.0,
-        ),
-        municipality: municipality,
-        imageUrls: imageUrl != null ? [imageUrl] : [],
-        reporterName: 'Anonymous User', // TODO: Implement user system
-        isCurrentUser: true,
-        priority: _getPriorityFromCategory(_selectedCategory ?? ''),
-        address: _locationController.text.isNotEmpty 
-            ? _locationController.text 
-            : '$municipality, Mauritius',
-      );
 
-      // Save to Supabase
-      final reportId = await supabaseService.createReport(report);
-      print('✅ Report saved successfully with ID: $reportId');
+      final authProvider = context.read<AuthProvider>();
+      final backendApi = BackendApiService();
+      final loc = _reportLocation;
+
+      final reportTitle = _selectedSpecificIssue ?? _selectedSubcategory ?? 'Issue Report';
+      final reportDesc = _descriptionController.text.isNotEmpty
+          ? _descriptionController.text
+          : 'No additional details provided';
+      final reportCategory = _selectedCategory ?? 'General';
+      final reportLat = loc?.latitude ?? AppConfig.mauritiusLatitude;
+      final reportLng = loc?.longitude ?? AppConfig.mauritiusLongitude;
+      final reportAddress = _locationController.text.isNotEmpty
+          ? _locationController.text
+          : '$municipality, Mauritius';
+
+      Map<String, dynamic> createdReport;
+      try {
+        createdReport = await backendApi.createReport(
+          title: reportTitle,
+          description: reportDesc,
+          category: reportCategory,
+          subcategory: _selectedSubcategory,
+          municipality: municipality,
+          latitude: reportLat,
+          longitude: reportLng,
+          address: reportAddress,
+          imageUrl: imageUrl,
+          accessToken: authProvider.accessToken,
+        );
+      } on SocketException catch (_) {
+        AppLogger.debug('Backend unreachable, falling back to direct Supabase insert');
+        if (mounted) setState(() => _uploadStage = 'Saving report (offline)...');
+        createdReport = await supabaseService.createReportDirect(
+          title: reportTitle,
+          description: reportDesc,
+          category: reportCategory,
+          subcategory: _selectedSubcategory,
+          municipality: municipality,
+          latitude: reportLat,
+          longitude: reportLng,
+          address: reportAddress,
+          imageUrl: imageUrl,
+          userId: authProvider.user?.id,
+        );
+      } on TimeoutException catch (_) {
+        AppLogger.debug('Backend timed out, falling back to direct Supabase insert');
+        if (mounted) setState(() => _uploadStage = 'Saving report (offline)...');
+        createdReport = await supabaseService.createReportDirect(
+          title: reportTitle,
+          description: reportDesc,
+          category: reportCategory,
+          subcategory: _selectedSubcategory,
+          municipality: municipality,
+          latitude: reportLat,
+          longitude: reportLng,
+          address: reportAddress,
+          imageUrl: imageUrl,
+          userId: authProvider.user?.id,
+        );
+      }
+
+      final reportId = createdReport['id']?.toString() ?? '';
+      AppLogger.debug('Report saved with ID: $reportId');
 
       // Show success animation
       setState(() {
@@ -591,7 +671,7 @@ class _ReportScreenState extends State<ReportScreen> {
       }
 
     } catch (e) {
-      print('❌ Error submitting report: $e');
+      AppLogger.error('Error submitting report', e);
       
       // Show retry dialog
       if (mounted) {
@@ -655,7 +735,7 @@ class _ReportScreenState extends State<ReportScreen> {
       final originalSize = await file.length();
       final compressedSize = await result.length();
       final savings = ((originalSize - compressedSize) / originalSize * 100).toStringAsFixed(1);
-      print('📦 Image compressed: ${(originalSize / 1024).toStringAsFixed(0)}KB → ${(compressedSize / 1024).toStringAsFixed(0)}KB (saved $savings%)');
+      AppLogger.debug('Image compressed: ${(originalSize / 1024).toStringAsFixed(0)}KB -> ${(compressedSize / 1024).toStringAsFixed(0)}KB ($savings% saved)');
       return File(result.path);
     }
     
@@ -673,7 +753,7 @@ class _ReportScreenState extends State<ReportScreen> {
     );
     
     final savings = ((bytes.length - result.length) / bytes.length * 100).toStringAsFixed(1);
-    print('📦 Image compressed: ${(bytes.length / 1024).toStringAsFixed(0)}KB → ${(result.length / 1024).toStringAsFixed(0)}KB (saved $savings%)');
+    AppLogger.debug('Image compressed: ${(bytes.length / 1024).toStringAsFixed(0)}KB -> ${(result.length / 1024).toStringAsFixed(0)}KB ($savings% saved)');
     
     return result;
   }
@@ -682,29 +762,24 @@ class _ReportScreenState extends State<ReportScreen> {
   Widget build(BuildContext context) {
     final categoryColor = _selectedCategory != null
         ? _getCategoryColor(_problemCategories.keys.toList().indexOf(_selectedCategory ?? ''))
-        : const Color(0xFF6C63FF);
+        : Theme.of(context).colorScheme.primary;
+
+    final cs = Theme.of(context).colorScheme;
 
     return Stack(
       children: [
         Scaffold(
-          backgroundColor: Colors.grey[50],
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: AppBar(
-            backgroundColor: Colors.white,
+            backgroundColor: cs.surface,
             elevation: 0,
             title: Text(
               'Create Report',
-              style: TextStyle(
-                color: Colors.grey[800],
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-              ),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
             leading: IconButton(
               onPressed: () => Navigator.of(context).pop(),
-              icon: Icon(
-                Icons.close,
-                color: Colors.grey[600],
-              ),
+              icon: Icon(Icons.close, color: cs.onSurface.withOpacity(0.7)),
             ),
           ),
           body: SingleChildScrollView(
@@ -771,15 +846,15 @@ class _ReportScreenState extends State<ReportScreen> {
     final canSubmit = _canSubmit() && !_isSubmitting;
     final categoryColor = _selectedCategory != null
         ? _getCategoryColor(_problemCategories.keys.toList().indexOf(_selectedCategory ?? ''))
-        : const Color(0xFF6C63FF);
+        : accentColor;
     
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF1A1A1A),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(0.3),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -829,15 +904,9 @@ class _ReportScreenState extends State<ReportScreen> {
   Widget _buildPhotoUploadCard() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: Colors.white12, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -848,12 +917,12 @@ class _ReportScreenState extends State<ReportScreen> {
               children: [
                 Icon(Icons.camera_alt, color: accentColor, size: 24),
                 const SizedBox(width: 12),
-                Text(
+                const Text(
                   'Add Photo (Optional)',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
+                    color: Colors.white,
                   ),
                 ),
               ],
@@ -865,9 +934,9 @@ class _ReportScreenState extends State<ReportScreen> {
               width: double.infinity,
               height: 200,
               decoration: BoxDecoration(
-                color: Colors.grey[50],
+                color: const Color(0xFF2A2A2A),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade200, width: 1.5),
+                border: Border.all(color: Colors.white12, width: 1.5),
               ),
               child: (_capturedImage != null || _capturedImageBytes != null)
                   ? Stack(
@@ -938,7 +1007,7 @@ class _ReportScreenState extends State<ReportScreen> {
                           Text(
                             'Camera or Gallery',
                             style: TextStyle(
-                              color: Colors.grey[600],
+                              color: Colors.grey.shade400,
                               fontSize: 14,
                             ),
                           ),
@@ -955,15 +1024,9 @@ class _ReportScreenState extends State<ReportScreen> {
   Widget _buildCategorySelection() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: Colors.white12, width: 1),
       ),
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -973,12 +1036,12 @@ class _ReportScreenState extends State<ReportScreen> {
             children: [
               Icon(Icons.category, color: accentColor, size: 24),
               const SizedBox(width: 12),
-              Text(
+              const Text(
                 'Select Category',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
+                  color: Colors.white,
                 ),
               ),
             ],
@@ -1007,8 +1070,8 @@ class _ReportScreenState extends State<ReportScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     color: isSelected 
-                        ? categoryColor.withOpacity(0.15)
-                        : Colors.grey[100],
+                        ? categoryColor.withOpacity(0.2)
+                        : const Color(0xFF2A2A2A),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: isSelected 
@@ -1022,14 +1085,14 @@ class _ReportScreenState extends State<ReportScreen> {
                     children: [
                       Icon(
                         _getCategoryIcon(category),
-                        color: isSelected ? categoryColor : Colors.grey[600],
+                        color: isSelected ? categoryColor : Colors.grey.shade400,
                         size: 20,
                       ),
                       const SizedBox(width: 8),
                       Text(
                         category,
                         style: TextStyle(
-                          color: isSelected ? categoryColor : Colors.grey[700],
+                          color: isSelected ? categoryColor : Colors.grey.shade300,
                           fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
                           fontSize: 14,
                         ),
@@ -1055,15 +1118,9 @@ class _ReportScreenState extends State<ReportScreen> {
     
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: Colors.white12, width: 1),
       ),
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -1076,10 +1133,10 @@ class _ReportScreenState extends State<ReportScreen> {
               Expanded(
                 child: Text(
                   'Select Subcategory',
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
+                    color: Colors.white,
                   ),
                 ),
               ),
@@ -1105,13 +1162,13 @@ class _ReportScreenState extends State<ReportScreen> {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: isSelected 
-                        ? categoryColor.withOpacity(0.1)
-                        : Colors.grey[50],
+                        ? categoryColor.withOpacity(0.2)
+                        : const Color(0xFF2A2A2A),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: isSelected 
                           ? categoryColor
-                          : Colors.grey.shade200,
+                          : Colors.white12,
                       width: isSelected ? 2 : 1,
                     ),
                   ),
@@ -1119,7 +1176,7 @@ class _ReportScreenState extends State<ReportScreen> {
                     children: [
                       Icon(
                         _getSubcategoryIcon(subcategory),
-                        color: isSelected ? categoryColor : Colors.grey[600],
+                        color: isSelected ? categoryColor : Colors.grey.shade400,
                         size: 20,
                       ),
                       const SizedBox(width: 12),
@@ -1127,7 +1184,7 @@ class _ReportScreenState extends State<ReportScreen> {
                         child: Text(
                           subcategory,
                           style: TextStyle(
-                            color: isSelected ? categoryColor : Colors.grey[700],
+                            color: isSelected ? categoryColor : Colors.grey.shade300,
                             fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
                             fontSize: 16,
                           ),
@@ -1162,15 +1219,9 @@ class _ReportScreenState extends State<ReportScreen> {
     
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: Colors.white12, width: 1),
       ),
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -1183,10 +1234,10 @@ class _ReportScreenState extends State<ReportScreen> {
               Expanded(
                 child: Text(
                   'Specific Issue',
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
+                    color: Colors.white,
                   ),
                 ),
               ),
@@ -1211,13 +1262,13 @@ class _ReportScreenState extends State<ReportScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     color: isSelected 
-                        ? categoryColor.withOpacity(0.1)
-                        : Colors.grey[50],
+                        ? categoryColor.withOpacity(0.2)
+                        : const Color(0xFF2A2A2A),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: isSelected 
                           ? categoryColor
-                          : Colors.grey.shade200,
+                          : Colors.white12,
                       width: isSelected ? 2 : 1,
                     ),
                   ),
@@ -1247,7 +1298,7 @@ class _ReportScreenState extends State<ReportScreen> {
                         child: Text(
                           issue,
                           style: TextStyle(
-                            color: isSelected ? categoryColor : Colors.grey[700],
+                            color: isSelected ? categoryColor : Colors.grey.shade300,
                             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                             fontSize: 15,
                           ),
@@ -1271,15 +1322,9 @@ class _ReportScreenState extends State<ReportScreen> {
     
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: Colors.white12, width: 1),
       ),
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -1289,40 +1334,43 @@ class _ReportScreenState extends State<ReportScreen> {
             children: [
               Icon(Icons.description, color: categoryColor, size: 24),
               const SizedBox(width: 12),
-              Text(
+              const Text(
                 'Additional Details',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
+                  color: Colors.white,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
           
-          // Description field
+          // Description field — capped to prevent abuse
           TextField(
             controller: _descriptionController,
             maxLines: 4,
-            style: const TextStyle(fontSize: 16),
+            maxLength: AppConfig.maxReportDescriptionLength,
+            maxLengthEnforcement: MaxLengthEnforcement.enforced,
+            style: const TextStyle(fontSize: 16, color: Colors.white),
             decoration: InputDecoration(
               hintText: 'Describe the issue in more detail... (Optional)',
+              counterStyle: TextStyle(color: Colors.grey.shade500),
               filled: true,
-              fillColor: Colors.grey[50],
+              fillColor: const Color(0xFF2A2A2A),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade200),
+                borderSide: BorderSide(color: Colors.white12),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade200),
+                borderSide: BorderSide(color: Colors.white12),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(color: categoryColor, width: 2),
               ),
-              hintStyle: TextStyle(color: Colors.grey[500]),
+              hintStyle: TextStyle(color: Colors.grey.shade500),
             ),
           ),
           
@@ -1331,25 +1379,25 @@ class _ReportScreenState extends State<ReportScreen> {
           // Location field
           TextField(
             controller: _locationController,
-            style: const TextStyle(fontSize: 16),
+            style: const TextStyle(fontSize: 16, color: Colors.white),
             decoration: InputDecoration(
               hintText: 'Specific location (Optional)',
               filled: true,
-              fillColor: Colors.grey[50],
+              fillColor: const Color(0xFF2A2A2A),
               prefixIcon: Icon(Icons.location_on, color: categoryColor),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade200),
+                borderSide: BorderSide(color: Colors.white12),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade200),
+                borderSide: BorderSide(color: Colors.white12),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(color: categoryColor, width: 2),
               ),
-              hintStyle: TextStyle(color: Colors.grey[500]),
+              hintStyle: TextStyle(color: Colors.grey.shade500),
             ),
           ),
         ],
@@ -1364,10 +1412,13 @@ class ReportSuccessScreen extends StatelessWidget {
 
   final String reportId;
 
+  static const Color _primary = Color(0xFF00D9A3);
+  static const Color _bg = Color(0xFF0A0A0A);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF6C63FF),
+      backgroundColor: _bg,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(32),
@@ -1379,13 +1430,13 @@ class ReportSuccessScreen extends StatelessWidget {
                 width: 140,
                 height: 140,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: _primary.withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   Icons.check_circle,
                   size: 80,
-                  color: Colors.white,
+                  color: _primary,
                 ),
               ),
               
@@ -1407,7 +1458,7 @@ class ReportSuccessScreen extends StatelessWidget {
                 'Thank you for helping improve our community.\nWe\'ll review your report and take action.',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.grey.shade300,
                   height: 1.5,
                 ),
               ),
@@ -1425,8 +1476,8 @@ class ReportSuccessScreen extends StatelessWidget {
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: const Color(0xFF6C63FF),
+                    backgroundColor: _primary,
+                    foregroundColor: Colors.black87,
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
@@ -1452,8 +1503,8 @@ class ReportSuccessScreen extends StatelessWidget {
                     Navigator.of(context).pushNamed('/history');
                   },
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    side: const BorderSide(color: Colors.white, width: 1.5),
+                    foregroundColor: _primary,
+                    side: const BorderSide(color: _primary, width: 1.5),
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),

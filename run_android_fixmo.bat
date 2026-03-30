@@ -96,7 +96,7 @@ echo    ✓ Camera functionality
 echo    ✓ Report submission
 echo.
 
-flutter run -d android --hot
+flutter run -d android --hot --dart-define-from-file=dart_define.env
 
 :: Return to original directory
 cd "%ORIGINAL_DIR%"

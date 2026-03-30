@@ -1,21 +1,33 @@
 {
-  "name": "backend",
-  "version": "1.0.0",
-  "main": "index.js",
+  "name": "fixmo-backend",
+  "version": "2.0.0",
+  "main": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
   },
-  "keywords": [],
+  "keywords": [
+    "fixmo",
+    "civic-reporting",
+    "mauritius"
+  ],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "FixMo civic reporting backend API",
   "dependencies": {
     "@supabase/supabase-js": "^2.50.0",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
-    "mixpanel": "^0.19.1",
-    "mixpanel-react-native": "^3.1.3",
-    "nodemailer": "^7.0.3"
+    "express-rate-limit": "^7.5.0",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.1.1",
+    "nodemailer": "^7.0.3",
+    "pino": "^9.6.0",
+    "pino-http": "^10.4.0",
+    "pino-pretty": "^13.0.0",
+    "sharp": "^0.34.5",
+    "zod": "^3.24.0"
   }
 }
